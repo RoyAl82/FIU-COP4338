@@ -49,7 +49,8 @@ int main(int argc, const char * argv[]) {
 }
 void * f(void * num)
 {
-    int * out = malloc(sizeof(int));
+    int * out = (int *) malloc(sizeof(int));
+    
     void * s;
     
     static int t = 0;
