@@ -24,6 +24,8 @@ int main(int argc, const char * argv[]) {
     
     pthread_create(&tid1, NULL, f, newNum);
     pthread_create(&tid2, NULL, f, newNum);
+    pthread_cond_t red;
+    
     
     
     pthread_join(nId, &newNum);
@@ -34,8 +36,6 @@ int main(int argc, const char * argv[]) {
     num = *(int*) newNum;
     
     printf("%d\n",num);
-    
-    
     
     
     
