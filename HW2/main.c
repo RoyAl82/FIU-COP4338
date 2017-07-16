@@ -21,11 +21,13 @@ int main(int argc, const char * argv[]) {
     void * newNum = &num;
     
     pthread_create(&nId, NULL, f, newNum);
+    
     pthread_create(&tid1, NULL, f, newNum);
     pthread_create(&tid2, NULL, f, newNum);
     
     
     pthread_join(nId, &newNum);
+    
     pthread_join(tid1, &newNum);
     pthread_join(tid2, &newNum);
     
@@ -53,6 +55,7 @@ void * f(void * num)
     static int t = 0;
     
     t += *(int *) num;
+    
     *out = 0;
     for(int i = 0; i < t; i++)
         *out+= (2 * 23) ;
