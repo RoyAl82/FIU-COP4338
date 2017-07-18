@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B08AE2541F18E132003B81DE"
-               BuildableName = "HW2"
-               BlueprintName = "HW2"
+               BlueprintIdentifier = "B08AE2651F1D3FF3003B81DE"
+               BuildableName = "TClient"
+               BlueprintName = "TClient"
                ReferencedContainer = "container:HW2.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -74,9 +74,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B08AE2541F18E132003B81DE"
-            BuildableName = "HW2"
-            BlueprintName = "HW2"
+            BlueprintIdentifier = "B08AE2651F1D3FF3003B81DE"
+            BuildableName = "TClient"
+            BlueprintName = "TClient"
             ReferencedContainer = "container:HW2.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

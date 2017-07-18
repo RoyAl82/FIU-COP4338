@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B08AE2591F18E132003B81DE /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2581F18E132003B81DE /* main.c */; };
+		B08AE2691F1D3FF3003B81DE /* TClient.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2681F1D3FF3003B81DE /* TClient.c */; };
+		B08AE2781F1D40DD003B81DE /* TServer.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE25F1F1CD42B003B81DE /* TServer.c */; };
+		B08AE2791F1D40E6003B81DE /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2731F1D409E003B81DE /* main.c */; };
+		B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE27B1F1D5D0A003B81DE /* hashmap.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -20,15 +23,54 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		B08AE2641F1D3FF3003B81DE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		B08AE26F1F1D409E003B81DE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		B08AE2551F18E132003B81DE /* HW2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HW2; sourceTree = BUILT_PRODUCTS_DIR; };
-		B08AE2581F18E132003B81DE /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		B08AE25F1F1CD42B003B81DE /* TServer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = TServer.c; path = ../HW2/TServer.c; sourceTree = "<group>"; };
+		B08AE2661F1D3FF3003B81DE /* TClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClient; sourceTree = BUILT_PRODUCTS_DIR; };
+		B08AE2681F1D3FF3003B81DE /* TClient.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClient.c; sourceTree = "<group>"; };
+		B08AE2711F1D409E003B81DE /* TServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TServer; sourceTree = BUILT_PRODUCTS_DIR; };
+		B08AE2731F1D409E003B81DE /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../TServer/main.c; sourceTree = "<group>"; };
+		B08AE27A1F1D4F13003B81DE /* data.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = data.txt; sourceTree = "<group>"; };
+		B08AE27B1F1D5D0A003B81DE /* hashmap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hashmap.c; sourceTree = "<group>"; };
+		B08AE27C1F1D5D0A003B81DE /* hashmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hashmap.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B08AE2521F18E132003B81DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B08AE2631F1D3FF3003B81DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B08AE26E1F1D409E003B81DE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -42,6 +84,8 @@
 			isa = PBXGroup;
 			children = (
 				B08AE2571F18E132003B81DE /* HW2 */,
+				B08AE2671F1D3FF3003B81DE /* TClient */,
+				B08AE2721F1D409E003B81DE /* TServer */,
 				B08AE2561F18E132003B81DE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,6 +94,8 @@
 			isa = PBXGroup;
 			children = (
 				B08AE2551F18E132003B81DE /* HW2 */,
+				B08AE2661F1D3FF3003B81DE /* TClient */,
+				B08AE2711F1D409E003B81DE /* TServer */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,9 +103,28 @@
 		B08AE2571F18E132003B81DE /* HW2 */ = {
 			isa = PBXGroup;
 			children = (
-				B08AE2581F18E132003B81DE /* main.c */,
+				B08AE2731F1D409E003B81DE /* main.c */,
 			);
 			path = HW2;
+			sourceTree = "<group>";
+		};
+		B08AE2671F1D3FF3003B81DE /* TClient */ = {
+			isa = PBXGroup;
+			children = (
+				B08AE2681F1D3FF3003B81DE /* TClient.c */,
+			);
+			path = TClient;
+			sourceTree = "<group>";
+		};
+		B08AE2721F1D409E003B81DE /* TServer */ = {
+			isa = PBXGroup;
+			children = (
+				B08AE25F1F1CD42B003B81DE /* TServer.c */,
+				B08AE27A1F1D4F13003B81DE /* data.txt */,
+				B08AE27B1F1D5D0A003B81DE /* hashmap.c */,
+				B08AE27C1F1D5D0A003B81DE /* hashmap.h */,
+			);
+			path = TServer;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -82,6 +147,40 @@
 			productReference = B08AE2551F18E132003B81DE /* HW2 */;
 			productType = "com.apple.product-type.tool";
 		};
+		B08AE2651F1D3FF3003B81DE /* TClient */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B08AE26A1F1D3FF3003B81DE /* Build configuration list for PBXNativeTarget "TClient" */;
+			buildPhases = (
+				B08AE2621F1D3FF3003B81DE /* Sources */,
+				B08AE2631F1D3FF3003B81DE /* Frameworks */,
+				B08AE2641F1D3FF3003B81DE /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TClient;
+			productName = TClient;
+			productReference = B08AE2661F1D3FF3003B81DE /* TClient */;
+			productType = "com.apple.product-type.tool";
+		};
+		B08AE2701F1D409E003B81DE /* TServer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B08AE2751F1D409E003B81DE /* Build configuration list for PBXNativeTarget "TServer" */;
+			buildPhases = (
+				B08AE26D1F1D409E003B81DE /* Sources */,
+				B08AE26E1F1D409E003B81DE /* Frameworks */,
+				B08AE26F1F1D409E003B81DE /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TServer;
+			productName = TServer;
+			productReference = B08AE2711F1D409E003B81DE /* TServer */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,6 +191,16 @@
 				ORGANIZATIONNAME = AlonsoRoicxy;
 				TargetAttributes = {
 					B08AE2541F18E132003B81DE = {
+						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = 7SDULAN59E;
+						ProvisioningStyle = Automatic;
+					};
+					B08AE2651F1D3FF3003B81DE = {
+						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = 7SDULAN59E;
+						ProvisioningStyle = Automatic;
+					};
+					B08AE2701F1D409E003B81DE = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = 7SDULAN59E;
 						ProvisioningStyle = Automatic;
@@ -111,6 +220,8 @@
 			projectRoot = "";
 			targets = (
 				B08AE2541F18E132003B81DE /* HW2 */,
+				B08AE2651F1D3FF3003B81DE /* TClient */,
+				B08AE2701F1D409E003B81DE /* TServer */,
 			);
 		};
 /* End PBXProject section */
@@ -120,7 +231,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B08AE2591F18E132003B81DE /* main.c in Sources */,
+				B08AE2791F1D40E6003B81DE /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B08AE2621F1D3FF3003B81DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B08AE2691F1D3FF3003B81DE /* TClient.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B08AE26D1F1D409E003B81DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */,
+				B08AE2781F1D40DD003B81DE /* TServer.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +360,38 @@
 			};
 			name = Release;
 		};
+		B08AE26B1F1D3FF3003B81DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7SDULAN59E;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		B08AE26C1F1D3FF3003B81DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7SDULAN59E;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		B08AE2761F1D409E003B81DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7SDULAN59E;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		B08AE2771F1D409E003B81DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7SDULAN59E;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -249,6 +409,23 @@
 			buildConfigurations = (
 				B08AE25D1F18E132003B81DE /* Debug */,
 				B08AE25E1F18E132003B81DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B08AE26A1F1D3FF3003B81DE /* Build configuration list for PBXNativeTarget "TClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B08AE26B1F1D3FF3003B81DE /* Debug */,
+				B08AE26C1F1D3FF3003B81DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		B08AE2751F1D409E003B81DE /* Build configuration list for PBXNativeTarget "TServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B08AE2761F1D409E003B81DE /* Debug */,
+				B08AE2771F1D409E003B81DE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 		};
