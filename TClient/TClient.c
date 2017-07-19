@@ -33,7 +33,7 @@ void error(char const * message) {
 }
 
 int argcT = 3;
-char * argvT[] = {" ", "127.0.0.1","9000"};
+char * argvT[] = {"TClient.o", "127.0.0.1","9000"};
 int main(int argc, char * argv[]) {
     // check number of arguments
     if (argcT < 3)

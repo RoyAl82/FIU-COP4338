@@ -14,6 +14,11 @@
 #include <arpa/inet.h> //inet_addr
 #include <unistd.h>    //write
 #include <sys/types.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+
+#include <string.h>
 #include <pthread.h>
 #include "hashmap.h"
 
@@ -30,7 +35,8 @@
 #define READING_FILE_INDEX 4
 #define WRITING_FILE_INDEX 5
 #define SIZE_OF_CHARACTERS 255
-
+#define BEGIN_SOCKET_PORT 9000
+#define FINAL_SOCKET_PORT 9008
 
 
 char * getReadingFile(const char * arg[], int argIndex);
@@ -40,8 +46,8 @@ char * readFile(FILE * readFile);
 int getNumOfSeatsFromFile(char * elem);
 int addFligtsToTable(FILE * read, map_t * myTable);
 int createTableFromFile(FILE * read, map_t * myTable);
-char ** agentsConnection(void ** socketTable);
-void * agents(void *);
+void * agentsConnection(void *arg);
+void * agents(void * arg);
 
 
 
@@ -55,15 +61,21 @@ typedef struct
 typedef struct
 {
     int socketID;
-    struct sockaddr_in sockAddress;
+    struct sockaddr_in sockAddress_in;
     int socketBind;
     int socketList;
     socklen_t addrlen;
+    struct sockaddr sockAddress;
+    
     
     
 }Socket;
 
-
+//Glabal Variables
+map_t myTable;
+Socket *socketTable[DEFAULT_TABLE_SIZE];
+pthread_mutex_t mutex;
+void **threadTable;
 
 
 const char * argT[] = {"TServer.exe" ,"127.0.0.1", "9000", "4", "/Users/Roicxy/Projects/HW2/HW2/data.txt","output.txt"}; //For testing
@@ -83,45 +95,47 @@ int main(int argc, const char * argv[])
         
         if((fROpen = fopen(rf, "r")) && (fWOpen = fopen(wf, "w")))
         {
-            map_t myTable = hashmap_new();
+            myTable = hashmap_new();
+            threadTable = calloc(DEFAULT_TABLE_SIZE, sizeof(pthread_t*));
             
             if(createTableFromFile(fROpen, myTable))
             {
-                void ** socketTables = calloc(10, sizeof(void*) * 10);
+//                void ** socketTables = calloc(10, sizeof(void*) * 10);
+//                
+//                int ** socketTable = malloc(sizeof(int*));
                 
-                int ** socketTable = malloc(sizeof(int*));
-                int port = 9000;
                 
-                Socket * socketItem = malloc(sizeof(Socket));
+//                Socket * socketItem = malloc(sizeof(Socket));
                 
                 
                 //agentsConnection(socketTable);
                 
-                for(int i = 0; i < 8; i++)
-                {
-                    //socketTable[i] = malloc(sizeof(int));
-                    
-                    socketItem->socketID= socket(AF_INET, SOCK_STREAM, 0);
-                    
-                    
-                    
-                    //struct sockaddr_in sockAddress;
-                    inet_aton(argT[1], &socketItem->sockAddress.sin_addr);
-                    
-                    //socketItem->sockAddress.sin_addr.s_addr = INADDR_ANY;
-                    socketItem->sockAddress.sin_port = htonl(port++);
-                    socketItem->sockAddress.sin_family = AF_INET;
-                    socketItem->addrlen = sizeof((struct sockaddr_in)socketItem->sockAddress);
-                    
-                    int socketBind = bind(socketItem->socketID, (const struct sockaddr *)&socketItem->sockAddress, socketItem->addrlen);
-//                    int socketList = listen(*socketTable[i], 5);
-//                    socklen_t addrlen = sizeof(sockAddress);
-//                    int socketAccept = accept(*socketTable[i], (struct sockaddr*)&sockAddress, &addrlen);
-                    socketTables[i] = socketItem;
-                    
-                }
+//                for(int i = 0; i < 8; i++)
+//                {
+//                    //socketTable[i] = malloc(sizeof(int));
+//                    
+//                    socketItem->socketID= socket(AF_INET, SOCK_STREAM, 0);
+//                    
+//                    
+//                    
+//                    //struct sockaddr_in sockAddress;
+//                    inet_aton(argT[1], &socketItem->sockAddress.sin_addr);
+//                    
+//                    //socketItem->sockAddress.sin_addr.s_addr = INADDR_ANY;
+//                    socketItem->sockAddress.sin_port = htonl(port++);
+//                    socketItem->sockAddress.sin_family = AF_INET;
+//                    socketItem->addrlen = sizeof((struct sockaddr_in)socketItem->sockAddress);
+//                    
+//                    int socketBind = bind(socketItem->socketID, (const struct sockaddr *)&socketItem->sockAddress, socketItem->addrlen);
+////                    int socketList = listen(*socketTable[i], 5);
+////                    socklen_t addrlen = sizeof(sockAddress);
+////                    int socketAccept = accept(*socketTable[i], (struct sockaddr*)&sockAddress, &addrlen);
+//                    socketTables[i] = socketItem;
                 
-                agentsConnection(socketTables);
+//                }
+                long connectionID = 0;
+                for(;connectionID < 8; connectionID++)
+                    agentsConnection(&connectionID);
                 
                 
                 
@@ -211,7 +225,7 @@ size_t getNumOfArguments(const char * arg[])
     while(arg[numOfArguments] != NULL)
         numOfArguments++;
     
-    return numOfArguments;
+    return numOfArguments - 1;
 }
 /*
  *
@@ -298,7 +312,7 @@ int processSales(map_t * myTable, char * trip, int seats)
          Flights * flights = NULL;
          any_t * item = NULL;
          
-         hashmap_get(myTable, trip, &item);
+         hashmap_get(myTable, trip, item);
          
          flights = (Flights *) item;
          
@@ -323,7 +337,7 @@ int reverseSales(map_t * myTable, char * trip, int seats)
         
         any_t * item = NULL;
         
-        hashmap_get(myTable, trip, flights);
+        hashmap_get(myTable, trip, (any_t *)flights);
         
         flights = (Flights *) item;
         
@@ -337,7 +351,7 @@ int reverseSales(map_t * myTable, char * trip, int seats)
  *
  *
  */
-int tripHasOpenSeats(map_t * myTable, char * trip)
+size_t tripHasOpenSeats(map_t * myTable, char * trip)
 {
     if(myTable && trip)
     {
@@ -345,7 +359,7 @@ int tripHasOpenSeats(map_t * myTable, char * trip)
         
         any_t * item = NULL;
         
-        hashmap_get(myTable, trip, flights);
+        hashmap_get(myTable, trip, (any_t *)flights);
         
         flights = (Flights *) item;
         
@@ -358,117 +372,80 @@ int tripHasOpenSeats(map_t * myTable, char * trip)
  *
  *
  */
-char ** agentsConnection(void** socketTable)
+void * agentsConnection(void *arg)
 {
+    static size_t port = BEGIN_SOCKET_PORT;
     
-    pthread_t agent1;
-    pthread_t agent2;
-    pthread_t agent3;
+    long agentNum = *(long*)arg;
     
-    char * msg1 = malloc(sizeof(char) * SIZE_OF_CHARACTERS);
-    char * msg2 = malloc(sizeof(char) * SIZE_OF_CHARACTERS);
-    char * msg3 = malloc(sizeof(char) * SIZE_OF_CHARACTERS);
-    
-    int index = 0;
-    
-    pthread_create(&agent1, NULL, agents((void*) &socketTable), NULL);
-    
-    Socket * sockets = socketTable[index++];
-    
-    accept(sockets->socketID, &sockets->sockAddress, sockets->addrlen);
-    
-    
-    
-    pthread_create(&agent2, NULL, agents((void*) &socketTable), NULL);
-    
-    sockets = socketTable[index++];
-    
-    accept(sockets->socketID, &sockets->sockAddress, sockets->addrlen);
-    
-    
-    
-    //pthread_create(&agent3, NULL, agents((void*) &socketTable), NULL);
-    
-    pthread_cond_t agent1Cond;
-    
-    pthread_mutex_t agMutex;
-    
-    int mutexT = pthread_mutex_init(&agMutex, NULL);
-    
-    int condT = pthread_cond_init(&agent1Cond, NULL);
-    
-    int condSignal = pthread_cond_signal_thread_np(&agent1Cond, agent1);
-    int condSigna2 = pthread_cond_signal_thread_np(&agent1Cond, agent2);
-    
-    int mutexLock = pthread_mutex_lock(&agMutex);
-    
-    int condWait = pthread_cond_wait(&agent1Cond, &agMutex);
-    
-    int mutexUnlock = pthread_mutex_unlock(&agMutex);
-    
-    
-    //int condSigna3 = pthread_cond_signal_thread_np(&agent1Cond, agent3);
+    if(port < FINAL_SOCKET_PORT)
+    {
+        pthread_t *agent = (pthread_t *) malloc(sizeof(pthread_t));
+        threadTable[agentNum] = agent;
+        
+        Socket * socketAgent = malloc(sizeof(Socket));
+        
+        socketTable[agentNum] = socketAgent;
+        
+        socketTable[agentNum]->socketID = socket(AF_INET, SOCK_STREAM,0);
 
+        
+        int enable = 1;
+        if (setsockopt(socketTable[agentNum]->socketID, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+            printf("Error Seting socket\n");
+        memset(&socketTable[agentNum]->sockAddress_in, 0, sizeof(socketTable[agentNum]->sockAddress_in));
+        socketTable[agentNum]->sockAddress_in.sin_port = htons(port++);
+        
+        socketTable[agentNum]->sockAddress_in.sin_family = AF_INET;
+        socketTable[agentNum]->addrlen = sizeof(socketTable[agentNum]->sockAddress);
+        socketTable[agentNum]->socketBind = bind(socketTable[agentNum]->socketID, (const struct sockaddr *) &socketTable[agentNum]->sockAddress_in, socketTable[agentNum]->addrlen);
+        
+        
+        inet_aton("127.0.0.1", &socketTable[agentNum]->sockAddress_in.sin_addr);
+        
+        
+//        socketTable[agentNum]->sockAddress_in.sin_addr.s_addr = INADDR_ANY;
+        
+        
+        
+        if(listen(socketTable[agentNum]->socketID, 3) == 0)
+        {
+            if(accept(socketTable[agentNum]->socketID, (struct sockaddr *)&socketTable[agentNum]->sockAddress_in, &socketTable[agentNum]->addrlen))
+            {
+                pthread_create(agent, NULL, agents(arg), NULL);
+                
+                
+//                pthread_exit(NULL);
+                free(socketTable[agentNum]);
+                free(threadTable[agentNum]);
+                return arg;
+            }
+            
+            
+        }
+    }
     
-    pthread_join(agent1, &msg1);
-    pthread_join(agent2, &msg2);
-    //pthread_join(agent3, &msg3);
     
-    char ** table = calloc(3, sizeof(char*) * 3);
-    table[0] = msg1;
-    table[1] = msg2;
-    table[2] = msg3;
     
-    return table;
+    return NULL;
 }
-void * agents(void * in)
+void * agents(void * arg)
 {
-    char * buff = calloc(SIZE_OF_CHARACTERS, sizeof(char) * SIZE_OF_CHARACTERS);
-    static int i = 0;
-    void** table = in;
-    Socket * sockets = (Socket*)table[i++];
+    long threadNum = *(long*)arg;
     
+    printf("The thread is %ld \n", threadNum);
     
-//    void ** socketTable = (int**) in;
-//    int port = 9000;
-//    socketTable[i] = malloc(sizeof(int));
-//    
-//    *socketTable[i] = socket(AF_INET, SOCK_STREAM, 0);
-//    struct sockaddr_in sockAddress;
-//    
-//    sockAddress.sin_addr.s_addr = INADDR_ANY;
-//    sockAddress.sin_port = htonl(port++);
-//    sockAddress.sin_family = AF_INET;
-//    
-//    int socketBind = bind(*socketTable[i], (const struct sockaddr *)&sockAddress, sizeof(sockAddress));
+    char data[255];
     
+    read(socketTable[threadNum]->socketID, &data, 255);
     
-    int socketListen = listen(sockets->socketID, 5);
+    printf("The message is %s\n", data);
     
+    char * newMsg = "Hello Back!";
     
+    write(socketTable[threadNum]->socketID, newMsg, strlen(newMsg)+1);
     
-//    socklen_t addrlen = sizeof(sockAddress);
-//    int socketAccept = accept(*socketTable[i++], (struct sockaddr*)&sockAddress, &addrlen);
-    
-    
-//    int * socketfd = malloc(sizeof(int));
-//    *socketfd = socket(AF_INET, SOCK_STREAM, 0);
-//    struct sockaddr_in sockAddress;
-//
-//    sockAddress.sin_addr.s_addr = INADDR_ANY;
-//    sockAddress.sin_port = htonl(*(int*)in);
-//    sockAddress.sin_family = AF_INET;
-//    
-//    int socketBind = bind(*socketfd, &sockAddress, sizeof(sockAddress));
-//    int socketList = listen(*socketfd, 5);
-//    socklen_t addrlen = sizeof(sockAddress);
-//    int socketAccept = accept(*socketfd, &sockAddress, &addrlen);
-    
-//    read(socketAccept, buff, SIZE_OF_CHARACTERS);
-    
-    return buff;
-
-    
+    return NULL;
 }
 
 
