@@ -46,6 +46,11 @@ char * readFile(FILE * readFile);
 int getNumOfSeatsFromFile(char * elem);
 int addFligtsToTable(FILE * read, map_t * myTable);
 int createTableFromFile(FILE * read, map_t * myTable);
+
+int processSales(map_t * myTable, char * trip, int seats);
+int reverseSales(map_t * myTable, char * trip, int seats);
+size_t tripHasOpenSeats(map_t * myTable, char * trip);
+
 void * agentsConnection(void *arg);
 void * agents(void * arg);
 
@@ -72,13 +77,13 @@ typedef struct
 }Socket;
 
 //Glabal Variables
-map_t myTable;
+map_t *myTable;
 Socket *socketTable[DEFAULT_TABLE_SIZE];
 pthread_mutex_t mutex;
 void **threadTable;
 
 
-const char * argT[] = {"TServer.exe" ,"127.0.0.1", "9000", "4", "/Users/Roicxy/Projects/HW2/HW2/data.txt","output.txt"}; //For testing
+const char * argT[] = {"TServer.exe" ,"127.0.0.1", "43001", "4", "/Users/Roicxy/Projects/HW2/HW2/data.txt","output.txt"}; //For testing
 
 
 
@@ -96,6 +101,7 @@ int main(int argc, const char * argv[])
         if((fROpen = fopen(rf, "r")) && (fWOpen = fopen(wf, "w")))
         {
             myTable = hashmap_new();
+            
             threadTable = calloc(DEFAULT_TABLE_SIZE, sizeof(pthread_t*));
             
             if(createTableFromFile(fROpen, myTable))
@@ -294,8 +300,8 @@ int createTableFromFile(FILE * read, map_t * myTable)
         
         newFlights->seats = getNumOfSeatsFromFile(newElem);
         newFlights->flights = newElem;
-        
-        if(hashmap_put(myTable, newElem, newFlights))
+        int putIn = hashmap_put(myTable, newElem, newFlights);
+        if(putIn)
             return FALSE;
     }
     
@@ -312,16 +318,20 @@ int processSales(map_t * myTable, char * trip, int seats)
          Flights * flights = NULL;
          any_t * item = NULL;
          
-         hashmap_get(myTable, trip, item);
+         int getOut = hashmap_get(myTable, trip, item);
          
-         flights = (Flights *) item;
+         if(!getOut)
+         {
+             flights = (Flights *) item;
+             
+             if(seats > flights->seats || flights->seats == 0)
+                 return FALSE;
+             
+             flights->seats--;
+             
+             return TRUE;
+         }
          
-         if(seats > flights->seats || flights->seats == 0)
-             return FALSE;
-         
-         flights->seats--;
-         
-         return TRUE;
      }
     return FALSE;
 }
@@ -337,13 +347,17 @@ int reverseSales(map_t * myTable, char * trip, int seats)
         
         any_t * item = NULL;
         
-        hashmap_get(myTable, trip, (any_t *)flights);
+        int getOut = hashmap_get(myTable, trip, (any_t *)flights);
         
-        flights = (Flights *) item;
-        
-        flights->seats += seats;
-        
-        return TRUE;
+        if(!getOut)
+        {
+            flights = (Flights *) item;
+            
+            flights->seats += seats;
+            
+            return TRUE;
+
+        }
     }
     return FALSE;
 }
@@ -359,11 +373,14 @@ size_t tripHasOpenSeats(map_t * myTable, char * trip)
         
         any_t * item = NULL;
         
-        hashmap_get(myTable, trip, (any_t *)flights);
+        int getOut = hashmap_get(myTable, trip, (any_t *)flights);
         
-        flights = (Flights *) item;
-        
-        return flights->seats;
+        if(!getOut)
+        {
+            flights = (Flights *) item;
+            
+            return flights->seats;
+        }
     }
     
     return FALSE;
@@ -401,19 +418,25 @@ void * agentsConnection(void *arg)
         socketTable[agentNum]->socketBind = bind(socketTable[agentNum]->socketID, (const struct sockaddr *) &socketTable[agentNum]->sockAddress_in, socketTable[agentNum]->addrlen);
         
         
-        inet_aton("127.0.0.1", &socketTable[agentNum]->sockAddress_in.sin_addr);
+        inet_pton(AF_INET, "127.0.0.1", &socketTable[agentNum]->sockAddress_in.sin_addr);
         
         
 //        socketTable[agentNum]->sockAddress_in.sin_addr.s_addr = INADDR_ANY;
         
-        
+        printf("Socket Pre-Listen.\n");
         
         if(listen(socketTable[agentNum]->socketID, 3) == 0)
         {
+            printf("Socket Post-Listen.\n Socket Pre-Accept.\n");
             if(accept(socketTable[agentNum]->socketID, (struct sockaddr *)&socketTable[agentNum]->sockAddress_in, &socketTable[agentNum]->addrlen))
             {
-                pthread_create(agent, NULL, agents(arg), NULL);
+                printf("Socket Post-Accept.\nThread Pre-Create.\n");
+                int threadTaskCreate = pthread_create((pthread_t *)threadTable[agentNum], NULL, agents(arg), NULL);
                 
+                if(!threadTaskCreate)
+                    printf("Error! creating thread Task\n");
+            
+                pthread_join((pthread_t)threadTable[agentNum], NULL);
                 
 //                pthread_exit(NULL);
                 free(socketTable[agentNum]);
@@ -429,7 +452,7 @@ void * agentsConnection(void *arg)
     
     return NULL;
 }
-void * agents(void * arg)
+void *agents(void * arg)
 {
     long threadNum = *(long*)arg;
     

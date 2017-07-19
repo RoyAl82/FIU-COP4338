@@ -33,7 +33,7 @@ void error(char const * message) {
 }
 
 int argcT = 3;
-char * argvT[] = {"TClient.o", "127.0.0.1","9000"};
+char * argvT[] = {"TClient.o", "127.0.0.1","43001"};
 int main(int argc, char * argv[]) {
     // check number of arguments
     if (argcT < 3)
@@ -71,7 +71,7 @@ int main(int argc, char * argv[]) {
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET; // set socket type
     server_address.sin_port = htons(port); // set port number
-    inet_aton(ip_address, &server_address.sin_addr); // set socket ip address
+    inet_pton(AF_INET, ip_address, &server_address.sin_addr); // set socket ip address
     
     // connect socket to server address
     if (connect(client_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
