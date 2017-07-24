@@ -46,13 +46,15 @@ char * readFile(FILE * readFile);
 int getNumOfSeatsFromFile(char * elem);
 int addFligtsToTable(FILE * read, map_t * myTable);
 int createTableFromFile(FILE * read, map_t * myTable);
+void getNetConnectionData(const char * arg[]);
+
 
 int processSales(map_t * myTable, char * trip, int seats);
 int reverseSales(map_t * myTable, char * trip, int seats);
 size_t tripHasOpenSeats(map_t * myTable, char * trip);
 
-void * agentsConnection(void *arg);
-void * agents(void * arg);
+void  *agentsConnection (void);
+static void  *agents (void * arg);
 
 
 
@@ -76,12 +78,22 @@ typedef struct
     
 }Socket;
 
+typedef struct
+{
+    char * ipAddr;
+    size_t beginningPort;
+    size_t numOfPorts;
+    size_t nextPortToUse;
+    
+}Net;
+
 //Glabal Variables
 map_t *myTable;
 Socket *socketTable[DEFAULT_TABLE_SIZE];
 pthread_mutex_t mutex;
-void **threadTable;
-
+pthread_t threadTable[1000];
+Net netConnection;
+int connClients[1000];
 
 const char * argT[] = {"TServer.exe" ,"127.0.0.1", "43001", "4", "/Users/Roicxy/Projects/HW2/HW2/data.txt","output.txt"}; //For testing
 
@@ -102,69 +114,31 @@ int main(int argc, const char * argv[])
         {
             myTable = hashmap_new();
             
-            threadTable = calloc(DEFAULT_TABLE_SIZE, sizeof(pthread_t*));
+//            threadTable = calloc(DEFAULT_TABLE_SIZE, sizeof(pthread_t*));
+            getNetConnectionData(argT);
+//            connClients = calloc(1000, sizeof(int));
             
             if(createTableFromFile(fROpen, myTable))
             {
-//                void ** socketTables = calloc(10, sizeof(void*) * 10);
-//                
-//                int ** socketTable = malloc(sizeof(int*));
-                
-                
-//                Socket * socketItem = malloc(sizeof(Socket));
-                
-                
-                //agentsConnection(socketTable);
-                
-//                for(int i = 0; i < 8; i++)
-//                {
-//                    //socketTable[i] = malloc(sizeof(int));
-//                    
-//                    socketItem->socketID= socket(AF_INET, SOCK_STREAM, 0);
-//                    
-//                    
-//                    
-//                    //struct sockaddr_in sockAddress;
-//                    inet_aton(argT[1], &socketItem->sockAddress.sin_addr);
-//                    
-//                    //socketItem->sockAddress.sin_addr.s_addr = INADDR_ANY;
-//                    socketItem->sockAddress.sin_port = htonl(port++);
-//                    socketItem->sockAddress.sin_family = AF_INET;
-//                    socketItem->addrlen = sizeof((struct sockaddr_in)socketItem->sockAddress);
-//                    
-//                    int socketBind = bind(socketItem->socketID, (const struct sockaddr *)&socketItem->sockAddress, socketItem->addrlen);
-////                    int socketList = listen(*socketTable[i], 5);
-////                    socklen_t addrlen = sizeof(sockAddress);
-////                    int socketAccept = accept(*socketTable[i], (struct sockaddr*)&sockAddress, &addrlen);
-//                    socketTables[i] = socketItem;
-                
-//                }
                 long connectionID = 0;
-                for(;connectionID < 8; connectionID++)
-                    agentsConnection(&connectionID);
+                for(;connectionID < netConnection.numOfPorts; connectionID++)
+                {
+//                    threadTable[connectionID] = (pthread_t *)malloc(sizeof(pthread_t));
+                    pthread_create(&threadTable[connectionID], NULL, agentsConnection(), NULL);
+//                    threadTable[connectionID+1] = (pthread_t *)malloc(sizeof(pthread_t));
+                    pthread_create(&threadTable[connectionID + 1], NULL, agentsConnection(), NULL);
+                }
+                
+                for(int i = 0; i < DEFAULT_TABLE_SIZE; i++)
+                {
+                    pthread_join(threadTable[i], NULL);
+                    free(threadTable[i]);
+                }
                 
                 
+                free(threadTable);
                 
-//                for(int i = 0; i < 4; i++)
-//                {
-//                    char * item = "MIAMI-ORL";
-//                    Flights * getFlights;
-//                    any_t flightItem = NULL;
-//                    
-//                    hashmap_get(myTable, item, &flightItem);
-//                    
-//                    getFlights = (Flights*) flightItem;
-//                    if(getFlights)
-//                        printf("new Data: %s %zu\n", getFlights->flights,getFlights->seats);
-//                    
-//                    getFlights->seats--;
-//                    
-//                }
-               
-                
-//                char ** newItem = agentsConnection();
-                
-                
+                printf("Thread after Join.\n");
                 
             }
             else
@@ -231,7 +205,7 @@ size_t getNumOfArguments(const char * arg[])
     while(arg[numOfArguments] != NULL)
         numOfArguments++;
     
-    return numOfArguments - 1;
+    return numOfArguments;
 }
 /*
  *
@@ -306,6 +280,17 @@ int createTableFromFile(FILE * read, map_t * myTable)
     }
     
     return TRUE;
+}
+/*
+ *
+ *
+ */
+void getNetConnectionData(const char *arg[])
+{
+    netConnection.ipAddr = (char *)arg[IP_ADDRESS_INDEX];
+    netConnection.beginningPort = atoi(arg[STARTING_PORT]);
+    netConnection.numOfPorts = atoi(arg[NUMBER_OF_PORT]);
+    netConnection.nextPortToUse = netConnection.beginningPort;
 }
 /*
  *
@@ -389,85 +374,118 @@ size_t tripHasOpenSeats(map_t * myTable, char * trip)
  *
  *
  */
-void * agentsConnection(void *arg)
-{
-    static size_t port = BEGIN_SOCKET_PORT;
-    
-    long agentNum = *(long*)arg;
-    
-    if(port < FINAL_SOCKET_PORT)
+void *agentsConnection(void)
+{   
+    long agentNum = 0;
+//     pthread_detach(pthread_self());
+    pthread_t tid;
+    if(netConnection.nextPortToUse < (netConnection.beginningPort + netConnection.numOfPorts))
     {
-        pthread_t *agent = (pthread_t *) malloc(sizeof(pthread_t));
-        threadTable[agentNum] = agent;
+//        static size_t threadTask = 20;
+//        pthread_t newThreads[250];
+        
+//        threadTable[agentNum] = (pthread_t *) malloc(sizeof(pthread_t));
+        
+        
+//        connClients[agentNum] = (int*)malloc(sizeof(int));
+        
+//        connClients[100];
         
         Socket * socketAgent = malloc(sizeof(Socket));
         
         socketTable[agentNum] = socketAgent;
         
-        socketTable[agentNum]->socketID = socket(AF_INET, SOCK_STREAM,0);
-
+        socketTable[agentNum]->socketID = socket(AF_INET, SOCK_STREAM,IPPROTO_TCP);
         
-        int enable = 1;
-        if (setsockopt(socketTable[agentNum]->socketID, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
-            printf("Error Seting socket\n");
-        memset(&socketTable[agentNum]->sockAddress_in, 0, sizeof(socketTable[agentNum]->sockAddress_in));
-        socketTable[agentNum]->sockAddress_in.sin_port = htons(port++);
         
+//        int enable = 1;
+//        if (setsockopt(socketTable[agentNum]->socketID, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+//            printf("Error Seting socket\n");
+//        memset(&socketTable[agentNum]->sockAddress_in, 0, sizeof(socketTable[agentNum]->sockAddress_in));
+        
+        socketTable[agentNum]->sockAddress_in.sin_port = htons(netConnection.nextPortToUse);
+        netConnection.nextPortToUse++;
         socketTable[agentNum]->sockAddress_in.sin_family = AF_INET;
         socketTable[agentNum]->addrlen = sizeof(socketTable[agentNum]->sockAddress);
+        
         socketTable[agentNum]->socketBind = bind(socketTable[agentNum]->socketID, (const struct sockaddr *) &socketTable[agentNum]->sockAddress_in, socketTable[agentNum]->addrlen);
         
         
-        inet_pton(AF_INET, "127.0.0.1", &socketTable[agentNum]->sockAddress_in.sin_addr);
+        inet_pton(AF_INET, netConnection.ipAddr, &socketTable[agentNum]->sockAddress_in.sin_addr);
         
         
 //        socketTable[agentNum]->sockAddress_in.sin_addr.s_addr = INADDR_ANY;
         
         printf("Socket Pre-Listen.\n");
         
-        if(listen(socketTable[agentNum]->socketID, 3) == 0)
+        if(listen(socketTable[agentNum]->socketID, 15) == 0)
         {
-            printf("Socket Post-Listen.\n Socket Pre-Accept.\n");
-            if(accept(socketTable[agentNum]->socketID, (struct sockaddr *)&socketTable[agentNum]->sockAddress_in, &socketTable[agentNum]->addrlen))
+            printf("Socket Post-Listen.\nSocket Pre-Accept.\n");
+            
+            long i;
+            for(i = 10; i < 250 ; i++)
             {
-                printf("Socket Post-Accept.\nThread Pre-Create.\n");
-                int threadTaskCreate = pthread_create((pthread_t *)threadTable[agentNum], NULL, agents(arg), NULL);
+//                ((connClients[i] = accept(socketTable[agentNum]->socketID, (struct sockaddr *)&socketTable[agentNum]->sockAddress_in, &socketTable[agentNum]->addrlen)) > 0)
+                printf("Socket Post-Accept.\n");
                 
-                if(!threadTaskCreate)
-                    printf("Error! creating thread Task\n");
-            
-                pthread_join((pthread_t)threadTable[agentNum], NULL);
-                
-//                pthread_exit(NULL);
-                free(socketTable[agentNum]);
-                free(threadTable[agentNum]);
-                return arg;
+                int *connfd = malloc(sizeof(int));
+                if((*connfd = accept(socketTable[agentNum]->socketID, (struct sockaddr *)&socketTable[agentNum]->sockAddress_in, &socketTable[agentNum]->addrlen)) > 0)
+                {
+//                    threadTable[i] = (pthread_t *) malloc(sizeof(pthread_t));
+                    connClients[i] = *connfd;
+                    
+                    printf("Thread Pre-Create.\n");
+                    
+                    pthread_create(&tid, NULL, agents((void *)i),NULL);
+                    
+                    
+                    printf("Thread Post-Create.\n");
+                   
+                }
+
             }
-            
             
         }
     }
     
     
-    
-    return NULL;
+    pthread_exit(NULL);
+//    return NULL;
 }
-void *agents(void * arg)
+static void *agents(void * arg)
 {
-    long threadNum = *(long*)arg;
-    
-    printf("The thread is %ld \n", threadNum);
-    
+    long agentNum = (long)arg;
     char data[255];
+//    pthread_t threadID = pthread_self();
     
-    read(socketTable[threadNum]->socketID, &data, 255);
+   
     
-    printf("The message is %s\n", data);
+//        pthread_detach(pthread_self());
     
-    char * newMsg = "Hello Back!";
+//    close(socketTable[0]->socketID);
+    do {
+        pthread_mutex_init(&mutex, NULL);
+        pthread_mutex_lock(&mutex);
+        printf("The thread is %ld \n", agentNum);
+        
+        read(connClients[agentNum], &data, 255);
+//    pthread_mutex_unlock(&mutex);
     
-    write(socketTable[threadNum]->socketID, newMsg, strlen(newMsg)+1);
     
+        printf("The message is %s\n", data);
+        
+        char newMsg[255] = "Hello Back!";
+//    pthread_mutex_lock(&mutex);
+        
+        write(connClients[agentNum], newMsg, strlen(newMsg)+1);
+        pthread_mutex_unlock(&mutex);
+        pthread_mutex_destroy(&mutex);
+        
+        
+    } while (strcmp("EXIT", data) != 0);
+    close(connClients[agentNum]);
+//    pthread_exit(NULL);
+
     return NULL;
 }
 
