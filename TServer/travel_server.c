@@ -55,8 +55,9 @@ void * get_flights(char * flight, void * seats);
 char* inttochar(int num, char* str, int base);
 void reverse(char str[], int length);
 void * create_send_data(void * arg);
+void reserve_flight(map_t flight_map, char * flight_token, char * seats_token);
 
-void *free_flight(char * key, void * data);
+void *free_flight_data(char * key, void * data);
 
 
 
@@ -101,7 +102,7 @@ void close_servers(socket_info * server, pthread_t * thread, int no_ports);
 
 /// @brief Processes command string from client and provides response
 /// @returns NULL if command is invalid, else string response
-char * process_flight_request(char * command, map_t flight_map);
+void * process_flight_request(char * command, map_t flight_map);
 
 /// @brief reads each line from @file_name expecting (flight, seats)
 /// pair. flight pairs are added to @p flight_map
@@ -259,14 +260,51 @@ void * hashmap_foreach(map_t flight_map, void *(* callback)(char *, void *)) {
     return newList;
 } // hashmap_foreach
 
-void * free_flight(char * key, void * data) {
+void * free_flight_data(char * key, void * data) {
     free(key);
     free(data);
     return NULL;
 }
+void reserve_flight(map_t flight_map, char * flight_token, char * seats_token)
+{
+    // assign persistent memory for hash node
+    char * flight = malloc(sizeof(char) * strlen(flight_token) + 1);
+    char * seats = malloc(sizeof(char) * strlen(seats_token) + 1);
+    
+    // TODO: free memory in request on server thread
+    
+    // copy temp strings into memory
+    strcpy(flight, flight_token);
+    strcpy(seats, seats_token);
+    
+    // acquire lock to flight_map
+    pthread_mutex_lock(&flight_map_mutex);
+    any_t *flight_to_reserve = malloc(sizeof(any_t));
+    
+    if(hashmap_get(flight_map, flight, flight_to_reserve) == MAP_OK)
+    {
+        char * seats_available = (char*) *flight_to_reserve;
+        size_t client_seats = atoi(seats);
+        size_t flight_seats = atoi(seats_available);
+        size_t update_seats = flight_seats - client_seats;
+        if(update_seats > 0)
+        {
+            char * new_update_seats = malloc(sizeof(char));
+            inttochar((int)update_seats, new_update_seats, 10);
+            strcpy((*flight_to_reserve), new_update_seats);
+            
+//            *flight_to_reserve = new_update_seats;
+        }
+       
+        
+    }
+    
+    pthread_mutex_unlock(&flight_map_mutex);
+
+}
 
 void  free_flight_map_data(map_t flight_map) {
-    void * free_flight = hashmap_foreach(flight_map, &free_flight);
+    void * free_flight = hashmap_foreach(flight_map, &free_flight_data);
     
     
 } // free_flight_map_data
@@ -322,6 +360,26 @@ void *client_handler(void * arg)
 {
     client_info * client = (client_info *) arg;
     
+    char * login = "Enter your Username: ";
+    
+    const size_t USERNAME_SIZE = 200;
+    
+    char userName[USERNAME_SIZE];
+    
+    write(client->client_connnection, login, (size_t)strlen(login));
+    
+    read(client->client_connnection, &userName, USERNAME_SIZE);
+    
+    strcat(userName, " >: ");
+    
+    if (write(client->client_connnection, userName, USERNAME_SIZE + 1) < 0) {
+        error("error: writing to connection");
+    }
+    
+    // holds incoming data from socket
+    int const BUFFER_SIZE = 1024;
+    char input[BUFFER_SIZE];
+
     while(1)
     {
         // get incoming connection information
@@ -333,12 +391,16 @@ void *client_handler(void * arg)
         
         printf("%d: incoming connection from %s:%d\n", client->client_socket->port, incoming_ip_address, incoming_port);
         
-        // holds incoming data from socket
-        int const BUFFER_SIZE = 1024;
-        char input[BUFFER_SIZE];
+        memset(input, 0, BUFFER_SIZE);
+        
+//        if (write(client->client_connnection, userName, USERNAME_SIZE + 1) < 0) {
+//            error("error: writing to connection");
+//        }
+//        write(client->client_connnection, &userName, USERNAME_SIZE);
+        
         
         // read data sent from socket into input
-        if (read(client->client_connnection, input, sizeof(input)) < 0) {
+        if (read(client->client_connnection, input, BUFFER_SIZE) < 0) {
             error("error: reading from connection");
         }
         
@@ -363,30 +425,11 @@ void *client_handler(void * arg)
         
         char * sendData = (char*) data;
         
-        
-        
-        
-//        char * sendData = (char *)malloc(sizeof(char));
-//        
-//        memset((void*)sendData, 0, sizeof(sendData));
-        
-//       
-//        for(int i = 0; i < current_data->size ; i++)
-//        {
-//            char * copyData = malloc(sizeof(char));
-//            memset((void*)copyData, 0, sizeof(copyData));
-//            
-//            strcpy(copyData, current_data->list[i]);
-//            free(current_data->list[i]);
-//            current_data->list[i] = NULL;
-//            strcat(sendData, copyData);
-//            free(copyData);
-//            
-//        }
-        // write to connection with reply
-//        free(&current_data);
-//        current_data = NULL;
         if (write(client->client_connnection, sendData, strlen(sendData) + 1) < 0) {
+            error("error: writing to connection");
+        }
+        
+        if (write(client->client_connnection, userName, USERNAME_SIZE + 1) < 0) {
             error("error: writing to connection");
         }
     }
@@ -400,19 +443,15 @@ void *client_handler(void * arg)
 
 void * create_send_data(void * arg)
 {
-    list_flights * current_data = (list_flights *) arg;
-    
-    
     pthread_mutex_lock(&flight_data_mutex);
+    list_flights * current_data = (list_flights *) arg;
 
     char * sendData = (char *)malloc(sizeof(char));
     char copyData[1000];
-    memset((void*)sendData, 0, sizeof(sendData));
-    
+    //memset((void*)sendData, 0, sizeof(sendData));
     
     for(int i = 0; i < current_data->size ; i++)
     {
-        
         memset(&copyData, 0, sizeof(copyData));
         
         if(current_data->list[i] != NULL)
@@ -422,7 +461,6 @@ void * create_send_data(void * arg)
             current_data->list[i] = NULL;
             strcat(sendData, copyData);
         }
-        
     }
     
     free(current_data);
@@ -550,10 +588,10 @@ int string_equal(char const * string, char const * other_string) {
 } // string_equal
 
 void print_flight(char * flight, void * seats) {
-    printf("%s %s\n", flight, seats);
+    printf("%s %s \n", flight, (char *)seats);
 }
 
-char * process_flight_request(char * input, map_t flight_map) {
+void * process_flight_request(char * input, map_t flight_map) {
     // parse input for commands
     // for now we're just taking the direct command
     // split command string to get command and arguments
@@ -565,7 +603,8 @@ char * process_flight_request(char * input, map_t flight_map) {
 		return "error: cannot proccess server command"; 
 	}
 
-    if (string_equal(command, "QUERY")) {
+    if (string_equal(command, "QUERY"))
+    {
 		// get flight to query 
 		char * flight = NULL; 
 		if (!(flight = strtok_r(NULL, " ", &input_tokens))) {
@@ -593,16 +632,16 @@ char * process_flight_request(char * input, map_t flight_map) {
         
 		return (void *)seats_flights;
     }	
-
-    if (string_equal(command, "LIST")) {
+    else if (string_equal(command, "LIST"))
+    {
         printf("server: listing flights\n");
 
         void * flight_list = hashmap_foreach(flight_map, &get_flights);
         
         return flight_list;
     }
-
-    if (string_equal(command, "RESERVE")) {
+    else if (string_equal(command, "RESERVE"))
+    {
         char * flight = NULL;
         char * seats = NULL;
 
@@ -615,7 +654,7 @@ char * process_flight_request(char * input, map_t flight_map) {
         }
 
         printf("server: reserving %s seats on flight %s\n", seats, flight);
-        add_flight(flight_map, flight, seats);
+        reserve_flight(flight_map, flight, seats);
         
         list_flights * reserve_flights = malloc(sizeof(list_flights));
         reserve_flights->list = malloc(sizeof(char*));
@@ -628,64 +667,80 @@ char * process_flight_request(char * input, map_t flight_map) {
         
         return (void *)reserve_flights;
     }
-
-	return "error: cannot recognize command"; 
+    else if(string_equal(command, "CHAT"))
+    {
+        return NULL;
+    }
+    else
+    {
+        pthread_mutex_lock(&flight_data_mutex);
+        list_flights * error_message = malloc(sizeof(list_flights));
+        error_message->list = malloc(sizeof(char*));
+        char * message = malloc(sizeof(char));
+        sprintf(message, "error: cannot recognize command %s\nPlease, try again.\n", command);
+        //error_message->list = malloc(sizeof(char*));
+        error_message->list[0] = message;
+        error_message->size = 1;
+        pthread_mutex_unlock(&flight_data_mutex);
+        return (void *) error_message;
+    }
+	
 } // process_flight_request
 
-//char* inttochar(int num, char* str, int base)
-//{
-//    int i = 0;
-//    int isNegative = 0;
-//    
-//    /* Handle 0 explicitely, otherwise empty string is printed for 0 */
-//    if (num == 0)
-//    {
-//        str[i++] = '0';
-//        str[i] = '\0';
-//        return str;
-//    }
-//    
-//    // In standard itoa(), negative numbers are handled only with
-//    // base 10. Otherwise numbers are considered unsigned.
-//    if (num < 0 && base == 10)
-//    {
-//        isNegative = 1;
-//        num = -num;
-//    }
-//    
-//    // Process individual digits
-//    while (num != 0)
-//    {
-//        int rem = num % base;
-//        str[i++] = (rem > 9)? (rem-10) + 'a' : rem + '0';
-//        num = num/base;
-//    }
-//    
-//    // If number is negative, append '-'
-//    if (isNegative)
-//        str[i++] = '-';
-//    
-//    str[i] = '\0'; // Append string terminator
-//    
-//    // Reverse the string
-//    reverse(str, i);
-//    
-//    return str;
-//}
-//
-///* A utility function to reverse a string  */
-//void reverse(char str[], int length)
-//{
-//    int start = 0;
-//    int end = length -1;
-//    while (start < end)
-//    {
-//        str[start] = str[start] + str[end];
-//        str[end] = str[start] - str[end];
-//        str[start] = str[start] - str[end];
-//        
-////        swap(*(str+start), *(str+end));
-//        start++;
-//        end--;
-//    }
-//}
+char* inttochar(int num, char* str, int base)
+{
+    int i = 0;
+    int isNegative = 0;
+    
+    /* Handle 0 explicitely, otherwise empty string is printed for 0 */
+    if (num == 0)
+    {
+        str[i++] = '0';
+        str[i] = '\0';
+        return str;
+    }
+    
+    // In standard itoa(), negative numbers are handled only with
+    // base 10. Otherwise numbers are considered unsigned.
+    if (num < 0 && base == 10)
+    {
+        isNegative = 1;
+        num = -num;
+    }
+    
+    // Process individual digits
+    while (num != 0)
+    {
+        int rem = num % base;
+        str[i++] = (rem > 9)? (rem-10) + 'a' : rem + '0';
+        num = num/base;
+    }
+    
+    // If number is negative, append '-'
+    if (isNegative)
+        str[i++] = '-';
+    
+    str[i] = '\0'; // Append string terminator
+    
+    // Reverse the string
+    reverse(str, i);
+    
+    return str;
+}
+
+/* A utility function to reverse a string  */
+void reverse(char str[], int length)
+{
+    int start = 0;
+    int end = length -1;
+    while (start < end)
+    {
+        str[start] = str[start] + str[end];
+        str[end] = str[start] - str[end];
+        str[start] = str[start] - str[end];
+        
+//        swap(*(str+start), *(str+end));
+        start++;
+        end--;
+    }
+}
