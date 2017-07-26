@@ -96,14 +96,12 @@ int main(int argc, char * argv[]) {
     if(read(client_fd, username, BUFFER_SIZE) < 0)
         error("error: reading from socket");
     
-//    int status = 0;
-    
     while(1)
     {
         printf("%s", username);
         
-        memset(buffer, 0, sizeof(buffer));
-        fgets(buffer, sizeof(buffer), stdin);
+        memset(buffer, 0, BUFFER_SIZE);
+        fgets(buffer, BUFFER_SIZE, stdin);
         
         
         // read input from terminal to be sent
@@ -120,17 +118,17 @@ int main(int argc, char * argv[]) {
         if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
             error("error: writing to socket");
         
-       printf("client: sending %s to server\n", buffer);
+        memset(buffer, 0, BUFFER_SIZE);
         
         if(read(client_fd, buffer, BUFFER_SIZE) < 0)
             error("error: reading from socket");
         
         printf("%s", buffer);
         
-        if(strcmp(buffer, "CLOSE") == 0)
-            break;
-
+        strtok(buffer, "\n"); // remove newline from input
         
+        if(strcmp(buffer, "LOGOFF") == 0)
+            break;
     } 
     
     
