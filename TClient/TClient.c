@@ -86,67 +86,52 @@ int main(int argc, char * argv[]) {
     fgets(buffer, sizeof(buffer), stdin);
     strtok(buffer, "\n"); // remove newline from input
     
-
-    
     // send input to server
-    if (write(client_fd, buffer, BUFFER_SIZE + 1) < 0)
+    if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
         error("error: writing to socket");
     
-    do {
+    char username[BUFFER_SIZE];
+    
+    
+    if(read(client_fd, username, BUFFER_SIZE) < 0)
+        error("error: reading from socket");
+    
+//    int status = 0;
+    
+    while(1)
+    {
+        printf("%s", username);
         
-//        // prompt user
-//        printf("\nclient: enter message to be sent: ");
+        memset(buffer, 0, sizeof(buffer));
+        fgets(buffer, sizeof(buffer), stdin);
         
-        // initialize buffer for input
-//        memset(&buffer, 0, sizeof(buffer));
-        char * bf;
-        while((bf = gets(buffer)) != NULL);
         
+        // read input from terminal to be sent
+        while(strcmp("\n", (const char*)buffer) == 0)
+        {
+            printf("%s", username);
+            fgets(buffer, sizeof(buffer), stdin);
+        }        
+        
+        strtok(buffer, "\n"); // remove newline from input
+        
+        
+        // send input to server
+        if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+            error("error: writing to socket");
+        
+       printf("client: sending %s to server\n", buffer);
         
         if(read(client_fd, buffer, BUFFER_SIZE) < 0)
             error("error: reading from socket");
         
         printf("%s", buffer);
         
-        // read input from terminal to be sent
-        fgets(buffer, sizeof(buffer), stdin);
-        strtok(buffer, "\n"); // remove newline from input
+        if(strcmp(buffer, "CLOSE") == 0)
+            break;
+
         
-        // send input to server
-        if (write(client_fd, buffer, BUFFER_SIZE + 1) < 0)
-            error("error: writing to socket");
-        
-       printf("client: sending %s to server\n", buffer);
-        //        int status;
-//        char * responce = malloc(sizeof(char));
-        
-        
-//        memset(&buffer, 0, sizeof(buffer));
-        
-        
-        // recieve response from server
-//        if (read(client_fd, buffer, BUFFER_SIZE) < 0)
-//            error("error: reading from socket");
-        
-//        printf("Server sent %s:\n", buffer);
-        
-//        while(read(client_fd, buffer, BUFFER_SIZE) > 0 && (status = strcmp(buffer, "EOF")) != 0)
-//        {
-//            if(!firstTime)
-//            {
-//                printf("Flight List:\n");
-//                firstTime++;
-//            }
-//            strcat(responce, buffer);
-//            
-//        }
-//        printf("%s", buffer);
-        
-       
-        
-        
-        
-    } while (strcmp(buffer, "CLOSE") != 0);
+    } 
     
     
     // close socket
