@@ -100,6 +100,9 @@ int main(int argc, char * argv[]) {
     {
         printf("%s", username);
         
+        if(strcmp(buffer, "LOGOFF") == 0)
+            break;
+        
         memset(buffer, 0, BUFFER_SIZE);
         fgets(buffer, BUFFER_SIZE, stdin);
         
@@ -127,8 +130,8 @@ int main(int argc, char * argv[]) {
         
         strtok(buffer, "\n"); // remove newline from input
         
-        if(strcmp(buffer, "LOGOFF") == 0)
-            break;
+        read(client_fd, username, sizeof(username));
+        
     } 
     
     
