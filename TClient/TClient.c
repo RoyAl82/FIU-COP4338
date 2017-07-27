@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -31,6 +32,22 @@ void error(char const * message) {
     perror(message);
     exit(0);
 }
+
+pthread_cond_t chat_room_cond_thread;
+
+pthread_mutex_t chat_room_mutex_thread;
+
+typedef struct
+{
+    char * username;
+    struct sockaddr_in * server_address;
+    int client_connnection;
+    char * buffer;
+    pthread_t *client_chat_thread;
+    
+}client_info;
+
+void * chat_msg(void * arg);
 
 int argcT = 3;
 char * argvT[] = {"TClient.o", "127.0.0.1","43001"};
@@ -51,6 +68,11 @@ int main(int argc, char * argv[]) {
     
     // stores host information
     struct hostent * server;
+    
+    pthread_cond_init(&chat_room_cond_thread, NULL);
+    
+    pthread_mutex_init(&chat_room_mutex_thread, NULL);
+    
     
     // stores incoming data from server
     int const BUFFER_SIZE = 1025;
@@ -96,23 +118,47 @@ int main(int argc, char * argv[]) {
     if(read(client_fd, username, BUFFER_SIZE) < 0)
         error("error: reading from socket");
     
+    client_info * my_connection = (client_info *)malloc(sizeof(client_info));
+    
+    my_connection->client_connnection = client_fd;
+    my_connection->server_address = &server_address;
+    my_connection->username = username;
+    my_connection->client_chat_thread = (pthread_t *)malloc(sizeof(pthread_t));
+//    pthread_create(&my_connection->client_chat_thread, NULL, chat_msg, my_connection);
+    
+//    pthread_create(&my_connection->client_chat_thread, NULL, &chat_msg, my_connection);
+//    pthread_cond_wait(&chat_room_cond_thread, &chat_room_mutex_thread);
+    
     while(1)
     {
-        printf("%s", username);
+        if(strcmp(username, buffer) != 0)
+        {
+            printf("%s", username);
+        }
+        
         
         if(strcmp(buffer, "LOGOFF") == 0)
             break;
         
         memset(buffer, 0, BUFFER_SIZE);
+        
+        pthread_create(my_connection->client_chat_thread, NULL, &chat_msg, my_connection);
+        
         fgets(buffer, BUFFER_SIZE, stdin);
         
-        
+        my_connection->buffer = buffer;
         // read input from terminal to be sent
         while(strcmp("\n", (const char*)buffer) == 0)
         {
             printf("%s", username);
-            fgets(buffer, sizeof(buffer), stdin);
-        }        
+            fgets(buffer, BUFFER_SIZE, stdin);
+            my_connection->buffer = buffer;
+        }
+//        void * conn = NULL;
+        pthread_cancel(*my_connection->client_chat_thread);
+//        pthread_join(my_connection->client_chat_thread, &conn);
+//        my_connection = (client_info *) conn;
+//        my_connection->client_chat_thread = PTHREAD;
         
         strtok(buffer, "\n"); // remove newline from input
         
@@ -130,7 +176,12 @@ int main(int argc, char * argv[]) {
         
         strtok(buffer, "\n"); // remove newline from input
         
-        read(client_fd, username, sizeof(username));
+        if(strcmp(buffer, username) != 0)
+        {
+            memset(username, 0, sizeof(username));
+            read(client_fd, username, sizeof(username));
+        }
+        
         
     } 
     
@@ -138,5 +189,26 @@ int main(int argc, char * argv[]) {
     // close socket
     close(client_fd);
     
+//    pthread_join(my_connection->client_chat_thread, NULL);
+    free(my_connection);
+    
     return 0;
-} 
+}
+
+void * chat_msg(void * arg)
+{
+    client_info * my_connection = (client_info*)arg;
+    size_t msg_len = sizeof(char) * 2000;
+    char * msg = (char*)malloc(msg_len);
+    
+    memset(msg, 0, msg_len);
+    
+    pthread_mutex_lock(&chat_room_mutex_thread);
+    read(my_connection->client_connnection, msg, msg_len);
+        
+    printf("\n%s\n%s",msg, my_connection->username);
+    pthread_mutex_unlock(&chat_room_mutex_thread);
+    free(msg);
+    pthread_exit(my_connection);
+    
+}

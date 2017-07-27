@@ -46,6 +46,7 @@ typedef struct
     pthread_t client_reserve_thread;
     pthread_t client_return_thread;
     pthread_t client_query_thread;
+    pthread_t client_send_data;
     
 }client_info;
 
@@ -267,19 +268,7 @@ void add_flight(map_t flight_map, char * flight_token, char * seats_token) {
 } // add_flight
 
 void * hashmap_foreach(map_t flight_map, void *(* callback)(char *, void *)) {
-    // data stuctures used to access hashmap internals 
-//    struct hashmap_element {
-//        char* key;
-//        int in_use;
-//        any_t data;
-//    };
-//
-//    struct hashmap_map {
-//        int table_size;
-//        int size;
-//        struct hashmap_element *data;
-//    };
-
+  
     struct hashmap_map * map = (struct hashmap_map *) flight_map;
     void ** callback_flight = NULL;
     callback_flight = (void **)calloc(map->size + 2, sizeof(void*));
@@ -451,7 +440,7 @@ void * server_handler(void * handler_args) {
         client->client_connnection = clientfd;
         client->client_socket = inet_socket;
         
-        if(clientCounter++ == 3)
+        if(clientCounter++ == 20)
         {
             sleep(10);
             clientCounter = 0;
@@ -556,13 +545,11 @@ void *client_handler(void * arg)
         // process commands
         current_data = (list_flights *) process_flight_request(input, client);
         
-        pthread_t threadid;
-        
-        pthread_create(&threadid, NULL, create_send_data, current_data);
+        pthread_create(&client->client_send_data, NULL, create_send_data, current_data);
         
         void * data = NULL;
         
-        pthread_join(threadid, &data);
+        pthread_join(client->client_send_data, &data);
         
         char * sendData = (char*) data;
         
@@ -570,7 +557,6 @@ void *client_handler(void * arg)
             error("error: writing to connection");
         }
     }
-    
     
     // close socket
     close(client->client_connnection);
@@ -929,19 +915,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     // parse input for commands
     // for now we're just taking the direct command
     // split command string to get command and arguments
-    struct hashmap_element {
-        char* key;
-        int in_use;
-        any_t data;
-    };
-    
-    struct hashmap_map {
-        int table_size;
-        int size;
-        struct hashmap_element *data;
-    };
-    
-//    map_t * flight_map = client_flight_map->client_socket->map;
     
     char * input_tokens = NULL; // used to save tokens when splitting string  
     char * command = NULL; 
@@ -966,35 +939,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
 
     if (string_equal(command, "QUERY"))
     {
-//		// get flight to query 
-//		char * flight = NULL; 
-//		if (!(flight = strtok_r(NULL, " ", &input_tokens))) {
-//			return "error: cannot proccess flight to query";
-//		}
-//
-//		char * seats;
-//		int result;
-//		printf("server: querying flight %s\n", flight);
-//		pthread_mutex_lock(&flight_map_mutex);
-//		// retrieve seats from map
-//		result = hashmap_get(flight_map, flight, (void**) &seats);
-//		pthread_mutex_unlock(&flight_map_mutex);
-//
-//		if (result != MAP_OK) {
-//			return "error: query failed"; 
-//		}
-//        list_flights * seats_flights = NULL;
-//        seats_flights = (list_flights *) malloc(sizeof(list_flights));
-//        seats_flights->list =(char **) malloc(sizeof(char *));
-//        char * newSeats = NULL;
-//        newSeats = (char*) malloc(sizeof(char) * strlen(seats) + 1);
-//        memset(newSeats, 0, sizeof(char) * strlen(seats) + 1);
-//        sprintf(newSeats, "%s\n", seats);
-//        seats_flights->list[0] = newSeats;
-//        seats_flights->size = 1;
-//        
-//		return (void *)seats_flights;
-        
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1008,20 +952,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     }
     else if (string_equal(command, "LIST") && !(number = strtok_r(NULL, " ", &input_tokens)))
     {
-//        printf("server: listing flights\n");
-//        list_flights * list = (list_flights *)malloc(sizeof(list_flights));
-//        
-//        pthread_mutex_lock(&flight_map_mutex);
-//        
-//        list->list = (char**)hashmap_foreach(flight_map, &get_flights);
-//        
-//        pthread_mutex_unlock(&flight_map_mutex);
-//        struct hashmap_map * m = (struct hashmap_map *)client_flight_map->client_socket->map;
-//        list->size = m->size;
-//        
-//        return list;
-        
-        
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1037,29 +967,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     }
     else if(string_equal(command, "LIST") && number )
     {
-//        printf("server: listing flights\n");
-//        list_flights * list = (list_flights*) malloc(sizeof(list_flights));
-//        
-//        pthread_mutex_lock(&flight_map_mutex);
-//        
-//        list->list = (char**)hashmap_foreach(flight_map, &get_flights);
-//        
-//        pthread_mutex_unlock(&flight_map_mutex);
-//        
-//        struct hashmap_map * m = (struct hashmap_map *)client_flight_map->client_socket->map;
-//        list->size = m->size;
-//        
-//        int n = atoi(number);
-//        
-//        if(n < list->size)
-//        {
-//            for(int i = n; i < list->size;i++)
-//                free(list->list[i]);
-//            list->size = n;
-//        }
-//        
-//        return (void *) list;
-        
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1076,38 +983,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     }
     else if(string_equal(command, "RETURN"))
     {
-//        char * flight = NULL;
-//        char * seats = NULL;
-//        
-//        if (!(flight = strtok_r(NULL, " ", &input_tokens))) {
-//            return "error: cannot process flight to reserve";
-//        }
-//        
-//        if (!(seats = strtok_r(NULL, " ", &input_tokens))) {
-//            return "error: cannot process seats to reserve";
-//        }
-//        
-//        printf("server: reserving %s seats on flight %s\n", seats, flight);
-//        char * status = return_flight(flight_map, flight, seats);
-//        
-//        list_flights * reserve_flights = NULL;
-//        reserve_flights = (list_flights *)malloc(sizeof(list_flights));
-//        reserve_flights->list = (char **)malloc(sizeof(char*));
-//        char * status_add_flight = NULL;
-//        char * message = "Your return flight -------- with -------- seats was (UN)SUCCESSFUL.\n";
-//        
-//        status_add_flight = (char *)malloc(sizeof(char) * strlen(message) + 1);
-//        memset(status_add_flight, 0, sizeof(char) * strlen(message) + 1);
-//        
-//        if(status)
-//            sprintf(status_add_flight, "Your return flight %s with %s seats was SUSCCESSFUL.\n", flight, seats);
-//        else
-//            sprintf(status_add_flight, "Your return flight %s with %s seats was UNSUCCESSFUl.\n", flight, seats);
-//        
-//        reserve_flights->list[0] = status_add_flight;
-//        reserve_flights->size = 1;
-//        
-//        return (void *)reserve_flights;
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1121,38 +996,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     }
     else if (string_equal(command, "RESERVE"))
     {
-//        char * flight = NULL;
-//        char * seats = NULL;
-//
-//        if (!(flight = strtok_r(NULL, " ", &input_tokens))) {
-//            return "error: cannot process flight to reserve";
-//        }
-//
-//        if (!(seats = strtok_r(NULL, " ", &input_tokens))) {
-//            return "error: cannot process seats to reserve";
-//        }
-//
-//        printf("server: reserving %s seats on flight %s\n", seats, flight);
-//        char * status = reserve_flight(flight_map, flight, seats);
-//        
-//        list_flights * reserve_flights = NULL;
-//        reserve_flights = (list_flights *)malloc(sizeof(list_flights));
-//        reserve_flights->list = (char **)malloc(sizeof(char*));
-//        char * status_add_flight = NULL;
-//        char * message = "Your reservation flight -------- with -------- seats was (UN)SUCCESSFUL.\n";
-//        
-//        status_add_flight = (char *)malloc(sizeof(char) * strlen(message) + 1);
-//        memset(status_add_flight, 0, sizeof(char) * strlen(message) + 1);
-//        
-//        if(status)
-//            sprintf(status_add_flight, "Your reservation flight %s with %s seats was SUSCCESSFUL.\n", flight, seats);
-//        else
-//            sprintf(status_add_flight, "Your reservation flight %s with %s seats was UNSUCCESSFUl.\n", flight, seats);
-//        
-//        reserve_flights->list[0] = status_add_flight;
-//        reserve_flights->size = 1;
-//        
-//        return (void *)reserve_flights;
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1167,25 +1010,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     }
     else if(string_equal(command, "LIST_AVAILABLE") && !(number = strtok_r(NULL, " ", &input_tokens)))
     {
-//        list_flights * list = (list_flights *)malloc(sizeof(list_flights));
-//        pthread_mutex_lock(&flight_map_mutex);
-//        
-//        list->list = (char**)hashmap_foreach(flight_map, &get_flights);
-//        
-//        pthread_mutex_unlock(&flight_map_mutex);
-//        struct hashmap_map * m = (struct hashmap_map *)client_flight_map->client_socket->map;
-//        list->size = m->size;
-//        
-//        pthread_t thread_to_list;
-//        
-//        pthread_create(&thread_to_list, NULL, list_available, list);
-//        
-//        void * new_list = NULL;
-//        pthread_join(thread_to_list, &new_list);
-//        
-//        
-//        return new_list;
-        
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1200,36 +1024,6 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
     }
     else if(string_equal(command, "LIST_AVAILABLE") && number)
     {
-//        list_flights * list = (list_flights *)malloc(sizeof(list_flights));
-//        pthread_mutex_lock(&flight_map_mutex);
-//        
-//        list->list = (char**)hashmap_foreach(flight_map, &get_flights);
-//        
-//        pthread_mutex_unlock(&flight_map_mutex);
-//        struct hashmap_map * m = (struct hashmap_map *)client_flight_map->client_socket->map;
-//        
-//        list->size = m->size;
-//        
-//        pthread_t thread_to_list;
-//        
-//        pthread_create(&thread_to_list, NULL, list_available, list);
-//        
-//        void * new_list = NULL;
-//        pthread_join(thread_to_list, &new_list);
-//        
-//        list = (list_flights *) new_list;
-//        
-//        int n = atoi(number);
-//        
-//        if(n < list->size)
-//        {
-//            for(int i = n; i < list->size;i++)
-//                free(list->list[i]);
-//            list->size = n;
-//        }
-//        
-//        return (void *) list;
-        
         client_request_data * myData = (client_request_data*)malloc(sizeof(client_request_data));
         
         myData->args = input_tokens;
@@ -1283,33 +1077,22 @@ void * process_flight_request(char * input, client_info * client_flight_map) {
 
 void * client_msg_chat(void * arg)
 {
-    struct hashmap_element {
-        char* key;
-        int in_use;
-        any_t data;
-    };
-    
-    struct hashmap_map {
-        int table_size;
-        int size;
-        struct hashmap_element *data;
-    };
-
     client_info * client = (client_info*) arg;
     
     size_t buff_len = sizeof(char) * 2000;
     char * buff = (char *) malloc(buff_len);
     
     char * chat_user = (char *) malloc(sizeof(char) * 250);
-    sprintf(chat_user, "chat room: %s > ", client->username);
+    sprintf(chat_user, "chat room: %s >  ", client->username);
     
     struct hashmap_map * map = (struct hashmap_map *)client_map;
     
     write(client->client_connnection, "ENTER CHAT\n", strlen("ENTER CHAT\n"));
     
+    sleep(1);
+    
     write(client->client_connnection, chat_user, strlen(chat_user));
     
-//    void ** clients_list = hashmap_foreach(client_map, &get_clients_list);
     
     while (1)
     {
@@ -1344,7 +1127,7 @@ void send_msg_chat(client_info * myself, void ** clients_list, size_t list_size,
     char * send_prefix_msg = "Chat message from %s :\n%s\n";
     size_t send_msg_len = sizeof(char) * strlen(msg) + strlen(myself->username) + strlen(send_prefix_msg) + 10;
     char * send_msg = (char *)malloc(send_msg_len);
-    sprintf(send_msg, "Chat message from %s :\n%s\n", myself->username, msg);
+    sprintf(send_msg, "\nCHAT message from %s :\n%s\n", myself->username, msg);
     
     for (int i = 0 ; i < list_size; i++)
     {
