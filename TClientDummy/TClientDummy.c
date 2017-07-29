@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include "hasmap.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -21,6 +22,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 
+#define MAX_THREADS 300
 
 /// prints error message and exits
 /// with error status
@@ -36,6 +38,9 @@ ssize_t readn(int fd, void *vptr, size_t n);
 pthread_cond_t chat_room_cond_thread;
 
 pthread_mutex_t chat_room_mutex_thread;
+
+map_t flights_map;
+
 
 typedef struct
 {
@@ -60,54 +65,74 @@ int main(int argc, char * argv[]) {
     // assign command line arguments
     char * ip_address = argvT[1];
     int port = atoi(argvT[2]);
-    
-    // socket handler
-    int client_fd;
+    int port_init = port;
+//    // socket handler
+//    int * client_fd;
     
     // client socket address info
     struct sockaddr_in server_address;
     
     // stores host information
     struct hostent * server;
+    flight_map = hashmap_new();
     
     pthread_cond_init(&chat_room_cond_thread, NULL);
     
     pthread_mutex_init(&chat_room_mutex_thread, NULL);
+    pthread_t ** clients_threads = (pthread_t **)malloc(sizeof(pthread_t*));
+    int i = 0;
     
-    // create a new socket stream
-    if ((client_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
-        error("error: opening client socket");
+    while (i < MAX_THREADS)
+    {
+        // socket handler
+        int * client_fd = (int *)malloc(sizeof(int));
+
+        if ((*client_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+            error("error: opening client socket");
+        
+        int enable = 1;
+        if (setsockopt(*client_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+            error("error: cannot set socket options");
+        
+        if ((server = gethostbyname(ip_address)) == NULL)
+            error("error: no host at ip addresss");
+        
+        // initialize server_address object
+        memset(&server_address, 0, sizeof(server_address));
+        server_address.sin_family = AF_INET; // set socket type
+        server_address.sin_port = htons(port++); // set port number
+        inet_pton(AF_INET, ip_address, &server_address.sin_addr); // set socket ip address
+        
+        // connect socket to server address
+        if (connect(*client_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
+            error("error: connecting to server");
+        
+        clients_threads[i] = (pthread_t *)malloc(sizeof(pthread_t));
+        
+        pthread_create(clients_threads[i++], NULL, server_connection, &client_fd);
+        
+        if(port > port_init + 4)
+        {
+            port = port_init;
+        }
+    }
+ 
     
-    int enable = 1;
-    if (setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
-        error("error: cannot set socket options");
+    for (int j = 0; j < i; j++)
+    {
+        void * out;
+        
+        pthread_join(*clients_threads[i], &out);
+        int * fd = (int *)out;
+        
+        close(*fd);
+    }
     
-    if ((server = gethostbyname(ip_address)) == NULL)
-        error("error: no host at ip addresss");
-    
-    // initialize server_address object
-    memset(&server_address, 0, sizeof(server_address));
-    server_address.sin_family = AF_INET; // set socket type
-    server_address.sin_port = htons(port); // set port number
-    inet_pton(AF_INET, ip_address, &server_address.sin_addr); // set socket ip address
-    
-    // connect socket to server address
-    if (connect(client_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
-        error("error: connecting to server");
-    
-    pthread_t client_thread;
-    
-    pthread_create(&client_thread, NULL, server_connection, &client_fd);
-    
-    pthread_join(client_thread, NULL);
-    
-    // close socket
-    close(client_fd);
     return 0;
 }
 void * server_connection(void* arg)
 {
-    int client_fd = *(int*)arg;
+    int * client_fd = (int*)arg;
     
     int const BUFFER_SIZE = 1025;
     char buffer[BUFFER_SIZE];
@@ -117,14 +142,14 @@ void * server_connection(void* arg)
     {
         memset(buffer, 0, BUFFER_SIZE);
         
-        if (read(client_fd, buffer, 51) < 0)
+        if (read(*client_fd, buffer, 51) < 0)
             error("error: reading from socket");
         
         fprintf(stdout,"%s", buffer);
         
         memset(buffer, 0, strlen(buffer));
         
-        if (read(client_fd, buffer, 51) < 0)
+        if (read(*client_fd, buffer, 51) < 0)
             error("error: reading from socket");
         
         fprintf(stdout,"%s", buffer);
@@ -134,16 +159,16 @@ void * server_connection(void* arg)
         fgets(buffer, sizeof(buffer), stdin);
         strtok(buffer, "\n");
         
-        if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+        if (write(*client_fd, buffer, (size_t)strlen(buffer)) < 0)
             error("error: writing to socket");
     }
     
-    if(read(client_fd, username, BUFFER_SIZE) < 0)
+    if(read(*client_fd, username, BUFFER_SIZE) < 0)
         error("error: reading from socket");
     
     client_info * my_connection = (client_info *)malloc(sizeof(client_info));
     
-    my_connection->client_connnection = client_fd;
+    my_connection->client_connnection = *client_fd;
     my_connection->username = username;
     my_connection->client_chat_thread = (pthread_t *)malloc(sizeof(pthread_t));
     my_connection->status = 1;
@@ -161,7 +186,6 @@ void * server_connection(void* arg)
             my_connection->status = 0;
             break;
         }
-        
         
         memset(buffer, 0, BUFFER_SIZE);
         
@@ -189,12 +213,12 @@ void * server_connection(void* arg)
         
         
         // send input to server
-        if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+        if (write(*client_fd, buffer, (size_t)strlen(buffer)) < 0)
             error("error: writing to socket");
         
         memset(buffer, 0, BUFFER_SIZE);
         
-        if(read(client_fd, buffer, BUFFER_SIZE) < 0)
+        if(read(*client_fd, buffer, BUFFER_SIZE) < 0)
         {
             my_connection->status = 0;
             error("error: reading from socket");
@@ -208,7 +232,7 @@ void * server_connection(void* arg)
         if(strcmp(buffer, username) != 0)
         {
             memset(username, 0, sizeof(username));
-            if(read(client_fd, username, sizeof(username)) < 0)
+            if(read(*client_fd, username, sizeof(username)) < 0)
             {
                 my_connection->status = 0;
                 error("error: reading from socket");
@@ -219,7 +243,7 @@ void * server_connection(void* arg)
     
     free(my_connection);
     
-    pthread_exit(NULL);
+    pthread_exit(&client_fd);
     
 }
 

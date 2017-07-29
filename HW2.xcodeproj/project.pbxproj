@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		B0142DBF1F221B9B00DFF810 /* TServer.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DBE1F221B9B00DFF810 /* TServer.c */; };
 		B0142DDC1F2D10E600DFF810 /* TClientDummy.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DDB1F2D10E600DFF810 /* TClientDummy.c */; };
+		B0142DE21F2D295700DFF810 /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DE01F2D295700DFF810 /* hashmap.c */; };
 		B08AE2691F1D3FF3003B81DE /* TClient.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2681F1D3FF3003B81DE /* TClient.c */; };
 		B08AE2791F1D40E6003B81DE /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2731F1D409E003B81DE /* main.c */; };
 		B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE27B1F1D5D0A003B81DE /* hashmap.c */; };
@@ -57,6 +58,8 @@
 		B0142DBE1F221B9B00DFF810 /* TServer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TServer.c; sourceTree = "<group>"; };
 		B0142DD91F2D10E600DFF810 /* TClientDummy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClientDummy; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0142DDB1F2D10E600DFF810 /* TClientDummy.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClientDummy.c; sourceTree = "<group>"; };
+		B0142DE01F2D295700DFF810 /* hashmap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hashmap.c; sourceTree = "<group>"; };
+		B0142DE11F2D295700DFF810 /* hashmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hashmap.h; sourceTree = "<group>"; };
 		B08AE2551F18E132003B81DE /* HW2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HW2; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08AE2661F1D3FF3003B81DE /* TClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08AE2681F1D3FF3003B81DE /* TClient.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClient.c; sourceTree = "<group>"; };
@@ -102,6 +105,8 @@
 		B0142DDA1F2D10E600DFF810 /* TClientDummy */ = {
 			isa = PBXGroup;
 			children = (
+				B0142DE01F2D295700DFF810 /* hashmap.c */,
+				B0142DE11F2D295700DFF810 /* hashmap.h */,
 				B0142DDB1F2D10E600DFF810 /* TClientDummy.c */,
 			);
 			path = TClientDummy;
@@ -283,6 +288,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B0142DE21F2D295700DFF810 /* hashmap.c in Sources */,
 				B0142DDC1F2D10E600DFF810 /* TClientDummy.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
