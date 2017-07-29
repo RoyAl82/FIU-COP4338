@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -32,6 +33,10 @@ void error(char const * message) {
     perror(message);
     exit(0);
 }
+void * server_connection(void* arg);
+ssize_t writen(int fd, const void *vptr, size_t n);
+ssize_t readn(int fd, void *vptr, size_t n);
+
 
 pthread_cond_t chat_room_cond_thread;
 
@@ -75,8 +80,8 @@ int main(int argc, char * argv[]) {
     
     
     // stores incoming data from server
-    int const BUFFER_SIZE = 1025;
-    char buffer[BUFFER_SIZE];      // = calloc(BUFFER_SIZE, sizeof(char));
+//    int const BUFFER_SIZE = 1025;
+//    char buffer[BUFFER_SIZE];      // = calloc(BUFFER_SIZE, sizeof(char));
     
     // create a new socket stream
     if ((client_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
@@ -99,20 +104,180 @@ int main(int argc, char * argv[]) {
     if (connect(client_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
         error("error: connecting to server");
     
-    if (read(client_fd, buffer, BUFFER_SIZE) < 0)
-        error("error: reading from socket");
+    pthread_t client_thread;
     
-    printf("%s", buffer);
+    pthread_create(&client_thread, NULL, server_connection, &client_fd);
     
-    // read input from terminal to be sent
-    fgets(buffer, sizeof(buffer), stdin);
-    strtok(buffer, "\n"); // remove newline from input
+    pthread_join(client_thread, NULL);
+    
+//    while(strcmp(buffer, "") == 0 || strcmp(buffer, "\n") == 0)
+//    {
+//        memset(buffer, 0, BUFFER_SIZE);
+//        
+//        if (read(client_fd, buffer, BUFFER_SIZE) < 0)
+//            error("error: reading from socket");
+//        
+//        printf("%s", buffer);
+//        
+//        memset(buffer, 0, strlen(buffer));
+//        
+//        if (read(client_fd, buffer, BUFFER_SIZE) < 0)
+//            error("error: reading from socket");
+//        
+//        printf("%s", buffer);
+//        
+//         memset(buffer, 0, BUFFER_SIZE);
+//        
+//        fgets(buffer, sizeof(buffer), stdin);
+//        strtok(buffer, "\n");
+//        
+//        if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+//            error("error: writing to socket");
+//    }
+//    
+//    
+////    memset(buffer, 0, BUFFER_SIZE);
+////    
+////    // read input from terminal to be sent
+////    fgets(buffer, sizeof(buffer), stdin);
+////    strtok(buffer, "\n"); // remove newline from input
+//    
+//    // send input to server
+////    if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+////        error("error: writing to socket");
+//    
+//    char username[BUFFER_SIZE];
+//    
+//    
+//    if(read(client_fd, username, BUFFER_SIZE) < 0)
+//        error("error: reading from socket");
+//    
+//    client_info * my_connection = (client_info *)malloc(sizeof(client_info));
+//    
+//    my_connection->client_connnection = client_fd;
+//    my_connection->server_address = &server_address;
+//    my_connection->username = username;
+//    my_connection->client_chat_thread = (pthread_t *)malloc(sizeof(pthread_t));
+////    pthread_create(&my_connection->client_chat_thread, NULL, chat_msg, my_connection);
+//    
+////    pthread_create(&my_connection->client_chat_thread, NULL, &chat_msg, my_connection);
+////    pthread_cond_wait(&chat_room_cond_thread, &chat_room_mutex_thread);
+//    
+//    while(1)
+//    {
+//        if(strcmp(username, buffer) != 0)
+//        {
+//            printf("%s", username);
+//        }
+//        
+//        if(strcmp(buffer, "LOGOFF") == 0)
+//            break;
+//        
+//        memset(buffer, 0, BUFFER_SIZE);
+//        
+//        pthread_create(my_connection->client_chat_thread, NULL, &chat_msg, my_connection);
+//        
+//        fgets(buffer, BUFFER_SIZE, stdin);
+//        
+//        my_connection->buffer = buffer;
+//        // read input from terminal to be sent
+//        while(strcmp("\n", (const char*)buffer) == 0)
+//        {
+//            printf("%s", username);
+//             memset(buffer, 0, BUFFER_SIZE);
+//            fgets(buffer, BUFFER_SIZE, stdin);
+//            my_connection->buffer = buffer;
+//        }
+//        
+//        pthread_cancel(*my_connection->client_chat_thread);
+//
+//        
+//        strtok(buffer, "\n"); // remove newline from input
+//        
+//        
+//        // send input to server
+//        if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+//            error("error: writing to socket");
+//        
+//        memset(buffer, 0, BUFFER_SIZE);
+//        
+//        if(read(client_fd, buffer, BUFFER_SIZE) < 0)
+//            error("error: reading from socket");
+//        
+//        printf("%s", buffer);
+//        
+//        strtok(buffer, "\n"); // remove newline from input
+//        
+//        if(strcmp(buffer, username) != 0)
+//        {
+//            memset(username, 0, sizeof(username));
+//            read(client_fd, username, sizeof(username));
+//        }
+//        
+//        
+//    } 
+//    
+//    
+//    
+//    
+////    pthread_join(my_connection->client_chat_thread, NULL);
+//    free(my_connection);
+    // close socket
+    close(client_fd);
+    return 0;
+}
+void * server_connection(void* arg)
+{
+    int client_fd = *(int*)arg;
+    
+    int const BUFFER_SIZE = 1025;
+    char buffer[BUFFER_SIZE];
+    char username[BUFFER_SIZE];
+    
+    
+    
+    
+    while(strcmp(buffer, "") == 0 || strcmp(buffer, "\n") == 0)
+    {
+        memset(buffer, 0, BUFFER_SIZE);
+        
+//        recv(client_fd, buffer, BUFFER_SIZE, 0);
+        
+        if (read(client_fd, buffer, 51) < 0)
+            error("error: reading from socket");
+//        ssize_t val = readn(client_fd, buffer, 51);
+        
+        printf("%s", buffer);
+        
+        memset(buffer, 0, strlen(buffer));
+//        recv(client_fd, buffer, BUFFER_SIZE, 0);
+        
+        if (read(client_fd, buffer, 51) < 0)
+            error("error: reading from socket");
+        
+        printf("%s", buffer);
+        
+        memset(buffer, 0, BUFFER_SIZE);
+        
+        fgets(buffer, sizeof(buffer), stdin);
+        strtok(buffer, "\n");
+        
+        if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+            error("error: writing to socket");
+    }
+    
+    
+    //    memset(buffer, 0, BUFFER_SIZE);
+    //
+    //    // read input from terminal to be sent
+    //    fgets(buffer, sizeof(buffer), stdin);
+    //    strtok(buffer, "\n"); // remove newline from input
     
     // send input to server
-    if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
-        error("error: writing to socket");
+    //    if (write(client_fd, buffer, (size_t)strlen(buffer)) < 0)
+    //        error("error: writing to socket");
     
-    char username[BUFFER_SIZE];
+    
     
     
     if(read(client_fd, username, BUFFER_SIZE) < 0)
@@ -121,13 +286,13 @@ int main(int argc, char * argv[]) {
     client_info * my_connection = (client_info *)malloc(sizeof(client_info));
     
     my_connection->client_connnection = client_fd;
-    my_connection->server_address = &server_address;
+//    my_connection->server_address = &server_address;
     my_connection->username = username;
     my_connection->client_chat_thread = (pthread_t *)malloc(sizeof(pthread_t));
-//    pthread_create(&my_connection->client_chat_thread, NULL, chat_msg, my_connection);
+    //    pthread_create(&my_connection->client_chat_thread, NULL, chat_msg, my_connection);
     
-//    pthread_create(&my_connection->client_chat_thread, NULL, &chat_msg, my_connection);
-//    pthread_cond_wait(&chat_room_cond_thread, &chat_room_mutex_thread);
+    //    pthread_create(&my_connection->client_chat_thread, NULL, &chat_msg, my_connection);
+    //    pthread_cond_wait(&chat_room_cond_thread, &chat_room_mutex_thread);
     
     while(1)
     {
@@ -135,7 +300,6 @@ int main(int argc, char * argv[]) {
         {
             printf("%s", username);
         }
-        
         
         if(strcmp(buffer, "LOGOFF") == 0)
             break;
@@ -151,14 +315,13 @@ int main(int argc, char * argv[]) {
         while(strcmp("\n", (const char*)buffer) == 0)
         {
             printf("%s", username);
+            memset(buffer, 0, BUFFER_SIZE);
             fgets(buffer, BUFFER_SIZE, stdin);
             my_connection->buffer = buffer;
         }
-//        void * conn = NULL;
+        
         pthread_cancel(*my_connection->client_chat_thread);
-//        pthread_join(my_connection->client_chat_thread, &conn);
-//        my_connection = (client_info *) conn;
-//        my_connection->client_chat_thread = PTHREAD;
+        
         
         strtok(buffer, "\n"); // remove newline from input
         
@@ -184,31 +347,88 @@ int main(int argc, char * argv[]) {
         
         
     } 
-    
-    
-    // close socket
-    close(client_fd);
-    
-//    pthread_join(my_connection->client_chat_thread, NULL);
     free(my_connection);
     
-    return 0;
+    pthread_exit(NULL);
+
 }
 
 void * chat_msg(void * arg)
 {
     client_info * my_connection = (client_info*)arg;
-    size_t msg_len = sizeof(char) * 2000;
-    char * msg = (char*)malloc(msg_len);
     
-    memset(msg, 0, msg_len);
-    
-    pthread_mutex_lock(&chat_room_mutex_thread);
-    read(my_connection->client_connnection, msg, msg_len);
+    while (1)
+    {
+        size_t msg_len = sizeof(char) * 2000;
+        char * msg = (char*)malloc(msg_len);
         
-    printf("\n%s\n%s",msg, my_connection->username);
-    pthread_mutex_unlock(&chat_room_mutex_thread);
-    free(msg);
-    pthread_exit(my_connection);
+        memset(msg, 0, msg_len);
     
+        read(my_connection->client_connnection, msg, msg_len);
+        
+        if(!msg)
+            break;
+        
+        printf("\n%s",msg);
+        
+//        memset(msg, 0, msg_len);
+//        
+//        read(my_connection->client_connnection, msg, msg_len);
+//        
+//        printf("\n%s",msg);
+//        printf("%s", my_connection->username);
+        
+        strtok(msg, "\n"); // remove newline from input
+        
+        if(strcmp(msg, my_connection->username) != 0)
+        {
+            memset(msg, 0, msg_len);
+            read(my_connection->client_connnection, msg, msg_len);
+        }
+        
+        free(msg);
+    }
+    
+    pthread_exit(NULL);
+    
+}
+ssize_t readn(int fd, void *vptr, size_t n)
+{
+
+    size_t nleft; ssize_t nread; char *ptr;
+    /* Read "n" bytes from a descriptor. */
+    ptr = vptr;
+    nleft = n;
+    while (nleft > 0) {
+        if ( (nread = read(fd, ptr, nleft)) < 0) {
+            if (errno == EINTR)
+                nread = 0; /* and call read() again */ else
+                    return (-1);
+        } else if (nread == 0)
+            break;
+        nleft -= nread;
+        ptr += nread;
+    }
+    return (n - nleft); /* EOF *//* return >= 0 */
+}
+ssize_t writen(int fd, const void *vptr, size_t n)
+{
+    
+    size_t nleft;
+    ssize_t nwritten;
+    const char *ptr;
+    /* Write "n" bytes to a descriptor. */
+    ptr = vptr;
+    nleft = n;
+    while (nleft > 0) {
+        if ( (nwritten = write(fd, ptr, nleft)) <= 0) {
+            if (nwritten < 0 && errno == EINTR)
+                nwritten = 0; /* and call write() again */
+            else
+                return (-1); /* error */
+        }
+            nleft -= nwritten;
+            ptr += nwritten;
+    }
+        return (n);  /* error */
 }
