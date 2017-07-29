@@ -8,12 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		B0142DBF1F221B9B00DFF810 /* TServer.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DBE1F221B9B00DFF810 /* TServer.c */; };
+		B0142DDC1F2D10E600DFF810 /* TClientDummy.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DDB1F2D10E600DFF810 /* TClientDummy.c */; };
 		B08AE2691F1D3FF3003B81DE /* TClient.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2681F1D3FF3003B81DE /* TClient.c */; };
 		B08AE2791F1D40E6003B81DE /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2731F1D409E003B81DE /* main.c */; };
 		B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE27B1F1D5D0A003B81DE /* hashmap.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		B0142DD71F2D10E600DFF810 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		B08AE2531F18E132003B81DE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -45,6 +55,8 @@
 
 /* Begin PBXFileReference section */
 		B0142DBE1F221B9B00DFF810 /* TServer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TServer.c; sourceTree = "<group>"; };
+		B0142DD91F2D10E600DFF810 /* TClientDummy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClientDummy; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0142DDB1F2D10E600DFF810 /* TClientDummy.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClientDummy.c; sourceTree = "<group>"; };
 		B08AE2551F18E132003B81DE /* HW2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HW2; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08AE2661F1D3FF3003B81DE /* TClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08AE2681F1D3FF3003B81DE /* TClient.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClient.c; sourceTree = "<group>"; };
@@ -56,6 +68,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B0142DD61F2D10E600DFF810 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B08AE2521F18E132003B81DE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -80,12 +99,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B0142DDA1F2D10E600DFF810 /* TClientDummy */ = {
+			isa = PBXGroup;
+			children = (
+				B0142DDB1F2D10E600DFF810 /* TClientDummy.c */,
+			);
+			path = TClientDummy;
+			sourceTree = "<group>";
+		};
 		B08AE24C1F18E132003B81DE = {
 			isa = PBXGroup;
 			children = (
 				B08AE2571F18E132003B81DE /* HW2 */,
 				B08AE2671F1D3FF3003B81DE /* TClient */,
 				B08AE2721F1D409E003B81DE /* TServer */,
+				B0142DDA1F2D10E600DFF810 /* TClientDummy */,
 				B08AE2561F18E132003B81DE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -96,6 +124,7 @@
 				B08AE2551F18E132003B81DE /* HW2 */,
 				B08AE2661F1D3FF3003B81DE /* TClient */,
 				B08AE2711F1D409E003B81DE /* TServer */,
+				B0142DD91F2D10E600DFF810 /* TClientDummy */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,6 +159,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B0142DD81F2D10E600DFF810 /* TClientDummy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0142DDD1F2D10E600DFF810 /* Build configuration list for PBXNativeTarget "TClientDummy" */;
+			buildPhases = (
+				B0142DD51F2D10E600DFF810 /* Sources */,
+				B0142DD61F2D10E600DFF810 /* Frameworks */,
+				B0142DD71F2D10E600DFF810 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TClientDummy;
+			productName = TClientDummy;
+			productReference = B0142DD91F2D10E600DFF810 /* TClientDummy */;
+			productType = "com.apple.product-type.tool";
+		};
 		B08AE2541F18E132003B81DE /* HW2 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B08AE25C1F18E132003B81DE /* Build configuration list for PBXNativeTarget "HW2" */;
@@ -190,6 +236,11 @@
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = AlonsoRoicxy;
 				TargetAttributes = {
+					B0142DD81F2D10E600DFF810 = {
+						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = 7SDULAN59E;
+						ProvisioningStyle = Automatic;
+					};
 					B08AE2541F18E132003B81DE = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = 7SDULAN59E;
@@ -222,11 +273,20 @@
 				B08AE2541F18E132003B81DE /* HW2 */,
 				B08AE2651F1D3FF3003B81DE /* TClient */,
 				B08AE2701F1D409E003B81DE /* TServer */,
+				B0142DD81F2D10E600DFF810 /* TClientDummy */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B0142DD51F2D10E600DFF810 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0142DDC1F2D10E600DFF810 /* TClientDummy.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B08AE2511F18E132003B81DE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -255,6 +315,22 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		B0142DDE1F2D10E600DFF810 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7SDULAN59E;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		B0142DDF1F2D10E600DFF810 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 7SDULAN59E;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		B08AE25A1F18E132003B81DE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -395,6 +471,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B0142DDD1F2D10E600DFF810 /* Build configuration list for PBXNativeTarget "TClientDummy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0142DDE1F2D10E600DFF810 /* Debug */,
+				B0142DDF1F2D10E600DFF810 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		B08AE2501F18E132003B81DE /* Build configuration list for PBXProject "HW2" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

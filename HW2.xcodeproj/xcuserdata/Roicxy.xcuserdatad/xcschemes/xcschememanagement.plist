@@ -16,6 +16,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>TClientDummy.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>TServer.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -24,6 +29,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>B0142DD81F2D10E600DFF810</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>B08AE2541F18E132003B81DE</key>
 		<dict>
 			<key>primary</key>

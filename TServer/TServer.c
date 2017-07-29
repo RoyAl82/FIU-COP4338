@@ -1538,6 +1538,8 @@ void * chat_list(void * arg)
         }
     }
     
+    client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) + 10);
+    sprintf(client_list_online[j++], "%d chat users.\n", map->size - 1);    
     free(clients_list);
     client_info * online_list = (client_info *)malloc(sizeof(client_info));
     online_list->buff = (char*)client_list_online;
