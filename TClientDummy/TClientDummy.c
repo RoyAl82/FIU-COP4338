@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
-#include "hasmap.h"
+#include "hashmap.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -35,12 +35,27 @@ ssize_t writen(int fd, const void *vptr, size_t n);
 ssize_t readn(int fd, void *vptr, size_t n);
 
 
+struct hashmap_element {
+    char* key;
+    int in_use;
+    any_t data;
+};
+
+struct hashmap_map {
+    int table_size;
+    int size;
+    struct hashmap_element *data;
+};
+
 pthread_cond_t chat_room_cond_thread;
 
 pthread_mutex_t chat_room_mutex_thread;
 
 map_t flights_map;
+map_t user_map;
 
+char *opt[7];
+char *opt_chat[5];
 
 typedef struct
 {
@@ -74,7 +89,24 @@ int main(int argc, char * argv[]) {
     
     // stores host information
     struct hostent * server;
-    flight_map = hashmap_new();
+    opt[0] = "QUERY";
+    opt[1] = "RESERVE";
+    opt[2] = "RETURN";
+    opt[3] = "LIST";
+    opt[4] = "LIST_AVAILABLE";
+    opt[5] = "ENTER CHAT";
+    opt[6] = "LOGOFF";
+    opt_chat[0] = "TEXT";
+    opt_chat[1] = "LIST";
+    opt_chat[2] = "LIST_ALL";
+    opt_chat[3] = "LIST_OFFLINE";
+    opt_chat[4] = "EXIT CHAT";
+    
+    
+    flights_map = hashmap_new();
+    user_map = hashmap_new();
+    
+    
     
     pthread_cond_init(&chat_room_cond_thread, NULL);
     
