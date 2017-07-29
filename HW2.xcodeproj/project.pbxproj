@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B0142DBF1F221B9B00DFF810 /* travel_server.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DBE1F221B9B00DFF810 /* travel_server.c */; };
+		B0142DBF1F221B9B00DFF810 /* TServer.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DBE1F221B9B00DFF810 /* TServer.c */; };
 		B08AE2691F1D3FF3003B81DE /* TClient.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2681F1D3FF3003B81DE /* TClient.c */; };
 		B08AE2791F1D40E6003B81DE /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2731F1D409E003B81DE /* main.c */; };
 		B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE27B1F1D5D0A003B81DE /* hashmap.c */; };
@@ -44,9 +44,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B0142DBE1F221B9B00DFF810 /* travel_server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = travel_server.c; sourceTree = "<group>"; };
+		B0142DBE1F221B9B00DFF810 /* TServer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TServer.c; sourceTree = "<group>"; };
 		B08AE2551F18E132003B81DE /* HW2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HW2; sourceTree = BUILT_PRODUCTS_DIR; };
-		B08AE25F1F1CD42B003B81DE /* TServer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = TServer.c; path = ../HW2/TServer.c; sourceTree = "<group>"; };
 		B08AE2661F1D3FF3003B81DE /* TClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08AE2681F1D3FF3003B81DE /* TClient.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClient.c; sourceTree = "<group>"; };
 		B08AE2711F1D409E003B81DE /* TServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TServer; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -120,9 +119,8 @@
 		B08AE2721F1D409E003B81DE /* TServer */ = {
 			isa = PBXGroup;
 			children = (
-				B08AE25F1F1CD42B003B81DE /* TServer.c */,
 				B08AE27A1F1D4F13003B81DE /* data.txt */,
-				B0142DBE1F221B9B00DFF810 /* travel_server.c */,
+				B0142DBE1F221B9B00DFF810 /* TServer.c */,
 				B08AE27B1F1D5D0A003B81DE /* hashmap.c */,
 				B08AE27C1F1D5D0A003B81DE /* hashmap.h */,
 			);
@@ -249,7 +247,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B0142DBF1F221B9B00DFF810 /* travel_server.c in Sources */,
+				B0142DBF1F221B9B00DFF810 /* TServer.c in Sources */,
 				B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
