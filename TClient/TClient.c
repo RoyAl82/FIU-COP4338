@@ -190,7 +190,7 @@ void * server_connection(void* arg)
         my_connection->buffer = buffer;
         
         // read input from terminal to be sent
-        while(my_connection->status && strcmp("\n", (const char*)buffer) == 0)
+        while(my_connection->status && strcmp("\n", (const char*)buffer) == 0 && my_connection->client_connnection)
         {
             if(my_connection->username_status)
             {
