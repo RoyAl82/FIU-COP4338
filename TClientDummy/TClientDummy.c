@@ -51,11 +51,14 @@ pthread_cond_t chat_room_cond_thread;
 
 pthread_mutex_t chat_room_mutex_thread;
 
-map_t flights_map;
-map_t user_map;
 
 char *opt[7];
 char *opt_chat[5];
+
+char ** flights;
+int flights_size;
+char ** usernames;
+int username_size;
 
 typedef struct
 {
@@ -101,29 +104,56 @@ int main(int argc, char * argv[]) {
     opt_chat[2] = "LIST_ALL";
     opt_chat[3] = "LIST_OFFLINE";
     opt_chat[4] = "EXIT CHAT";
+    usernames = (char**)malloc(sizeof(char*) * 10);
+    usernames[0] = "ROY";
+    usernames[1] = "ROB";
+    usernames[2] = "CARLO";
+    usernames[3] = "PABLO";
+    usernames[4] = "JOHN";
+    usernames[5] = "COVFEFE";
+    usernames[6] = "CAROL";
+    usernames[7] = "RACHEL";
+    usernames[8] = "PEDRO";
+    usernames[9] = "ROBERT";
+    username_size = 9;
+    flights = NULL;
+    flights_size = 0;
     
     
-    flights_map = hashmap_new();
-    user_map = hashmap_new();
+    time_t t;
     
-    
+    srand((unsigned) time(&t));
     
     pthread_cond_init(&chat_room_cond_thread, NULL);
     
+    
+    
     pthread_mutex_init(&chat_room_mutex_thread, NULL);
     pthread_t ** clients_threads = (pthread_t **)malloc(sizeof(pthread_t*));
+    int ** connection_fd = (int**)malloc(sizeof(int *) * MAX_THREADS);
+    
+//    if ((*connection_fd[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+//        error("error: opening client socket");
+//    
+//    int enable = 1;
+//    if (setsockopt(*connection_fd[i], SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+//        error("error: cannot set socket options");
+//    
+//    if ((server = gethostbyname(ip_address)) == NULL)
+//        error("error: no host at ip addresss");
+    
     int i = 0;
     
     while (i < MAX_THREADS)
     {
         // socket handler
-        int * client_fd = (int *)malloc(sizeof(int));
+        connection_fd[i] = (int *)malloc(sizeof(int));
 
-        if ((*client_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+        if ((*connection_fd[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
             error("error: opening client socket");
         
         int enable = 1;
-        if (setsockopt(*client_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+        if (setsockopt(*connection_fd[i], SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
             error("error: cannot set socket options");
         
         if ((server = gethostbyname(ip_address)) == NULL)
@@ -136,17 +166,18 @@ int main(int argc, char * argv[]) {
         inet_pton(AF_INET, ip_address, &server_address.sin_addr); // set socket ip address
         
         // connect socket to server address
-        if (connect(*client_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
+        if (connect(*connection_fd[i], (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
             error("error: connecting to server");
         
         clients_threads[i] = (pthread_t *)malloc(sizeof(pthread_t));
         
-        pthread_create(clients_threads[i++], NULL, server_connection, &client_fd);
+        pthread_create(clients_threads[i], NULL, server_connection, connection_fd[i]);
         
         if(port > port_init + 4)
         {
             port = port_init;
         }
+        i++;
     }
  
     
@@ -169,9 +200,8 @@ void * server_connection(void* arg)
     int const BUFFER_SIZE = 1025;
     char buffer[BUFFER_SIZE];
     char username[BUFFER_SIZE];
-    
-    while(strcmp(buffer, "") == 0 || strcmp(buffer, "\n") == 0)
-    {
+    char * buffer1 = (char *)malloc(sizeof(char*) * BUFFER_SIZE);
+
         memset(buffer, 0, BUFFER_SIZE);
         
         if (read(*client_fd, buffer, 51) < 0)
@@ -188,12 +218,11 @@ void * server_connection(void* arg)
         
         memset(buffer, 0, BUFFER_SIZE);
         
-        fgets(buffer, sizeof(buffer), stdin);
-        strtok(buffer, "\n");
+    
+    int index = rand() % 9;
         
-        if (write(*client_fd, buffer, (size_t)strlen(buffer)) < 0)
+    if (write(*client_fd, usernames[index], strlen(usernames[index])) < 0)
             error("error: writing to socket");
-    }
     
     if(read(*client_fd, username, BUFFER_SIZE) < 0)
         error("error: reading from socket");
@@ -205,6 +234,45 @@ void * server_connection(void* arg)
     my_connection->client_chat_thread = (pthread_t *)malloc(sizeof(pthread_t));
     my_connection->status = 1;
     
+    
+    if (write(*client_fd, opt[3],strlen(opt[3])) < 0)
+        error("error: writing to socket");
+    
+    memset(buffer, 0, BUFFER_SIZE);
+    
+    if(read(*client_fd, buffer1, BUFFER_SIZE) < 0)
+    {
+        my_connection->status = 0;
+        error("error: reading from socket");
+    }
+    pthread_mutex_lock(&chat_room_mutex_thread);
+    if(!flights)
+    {
+        int count = 0;
+        int size = 100;
+        flights = (char**)malloc(sizeof(char*) * size);
+        for(int i = 0; buffer1 != NULL; i++)
+        {
+            if(count < size)
+            {
+                char * fl = NULL;
+                fl = strtok_r(buffer1, "\n",&buffer1);
+                strtok(fl, " ");
+                flights[count++] = fl;
+            }
+            else
+            {
+                size *= 2;
+                char** temp = (char**)realloc(flights, sizeof(char*) * size);
+                
+                if(temp)
+                    flights = temp;
+            }
+        }
+        flights_size = count;
+        
+    }
+    pthread_mutex_unlock(&chat_room_mutex_thread);
     
     while(my_connection->status)
     {
@@ -221,31 +289,32 @@ void * server_connection(void* arg)
         
         memset(buffer, 0, BUFFER_SIZE);
         
-        pthread_create(my_connection->client_chat_thread, NULL, chat_msg, my_connection);
+//        pthread_create(my_connection->client_chat_thread, NULL, chat_msg, my_connection);
         
-        fgets(buffer, BUFFER_SIZE, stdin);
+//        fgets(buffer, BUFFER_SIZE, stdin);
         
-        my_connection->buffer = buffer;
+//        my_connection->buffer = buffer;
         
         // read input from terminal to be sent
-        while(my_connection->status && strcmp("\n", (const char*)buffer) == 0)
-        {
-            fprintf(stdout, "%s", username);
-            memset(buffer, 0, BUFFER_SIZE);
-            
-            fgets(buffer, BUFFER_SIZE, stdin);
-            my_connection->buffer = buffer;
-        }
+//        while(my_connection->status && strcmp("\n", (const char*)buffer) == 0)
+//        {
+//            fprintf(stdout, "%s", username);
+//            memset(buffer, 0, BUFFER_SIZE);
+//            
+////            fgets(buffer, BUFFER_SIZE, stdin);
+////            my_connection->buffer = buffer;
+//        }
         
+        fprintf(stdout, "%s", username);
         
         pthread_cancel(*my_connection->client_chat_thread);
         
         
-        strtok(buffer, "\n"); // remove newline from input
+//        strtok(buffer, "\n"); // remove newline from input
         
         
         // send input to server
-        if (write(*client_fd, buffer, (size_t)strlen(buffer)) < 0)
+        if (write(*client_fd, opt[3],strlen(opt[3])) < 0)
             error("error: writing to socket");
         
         memset(buffer, 0, BUFFER_SIZE);
@@ -255,7 +324,34 @@ void * server_connection(void* arg)
             my_connection->status = 0;
             error("error: reading from socket");
         }
-        
+//        pthread_mutex_lock(&chat_mutex_thread);
+//        if(!flights)
+//        {
+//            int count = 0;
+//            int size = 100;
+//            flights = (char**)malloc(sizeof(char*) * size);
+//            for(int i = 0; buffer != NULL; i++)
+//            {
+//                if(count < size)
+//                {
+//                    char * fl = NULL;
+//                    fl = strtok_r(buffer, "\n",buffer);
+//                    strtok(fl, " ");
+//                    flights[count++] = fl;
+//                }
+//                else
+//                {
+//                    size *= 2;
+//                    char** temp = (char**)realloc(flights, sizeof(char*) * size);
+//                    
+//                    if(temp)
+//                        flights = temp;
+//                }
+//            }
+//            flights_size = count;
+//            
+//        }
+//        pthread_mutex_unlock(&chat_mutex_thread);
         
         fprintf(stdout, "%s", buffer);
         

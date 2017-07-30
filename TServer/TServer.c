@@ -702,26 +702,34 @@ void * create_send_data(void * arg)
     
     char * sendData = NULL;
     size_t sizeOfChar = sizeof(char);
-    size_t sizeOfStringFlights = strlen(current_data->list[0]);
-    size_t size = (sizeOfChar * (sizeOfStringFlights * (current_data->size + 1)));
-    sendData = (char *)malloc(size);
-    memset(sendData, 0, size);
     
-    for(int i = 0; i < current_data->size ; i++)
+    if(current_data->list[0])
     {
+        size_t sizeOfStringFlights = strlen(current_data->list[0]);
+        size_t size = (sizeOfChar * (sizeOfStringFlights * (current_data->size + 1)));
+        sendData = (char *)malloc(size);
+        memset(sendData, 0, size);
         
-        if(current_data->list[i] != NULL)
+        for(int i = 0; i < current_data->size ; i++)
         {
-            sprintf(sendData, "%s%s",sendData, current_data->list[i]);
-            free(current_data->list[i]);
-            current_data->list[i] = NULL;
             
+            if(current_data->list[i] != NULL)
+            {
+                sprintf(sendData, "%s%s",sendData, current_data->list[i]);
+                free(current_data->list[i]);
+                current_data->list[i] = NULL;
+            }
         }
+        free(current_data->list);
+        current_data->list = NULL;
+        free(current_data);
+        current_data = NULL;
     }
-    free(current_data->list);
-    current_data->list = NULL;
-    free(current_data);
-    current_data = NULL;
+    else
+    {
+        sendData = "Wrong input, Try again.\n"
+    }
+    
     
     pthread_exit(sendData);
 }
@@ -1114,7 +1122,73 @@ char * reserve_flight(map_t flight_map, char * flight_token, char * seats_token)
     
     return NULL;
 }
+char * return_flight_r(map_t flight_map, char * flight_token, char * seats_token)
+{
+    char * invert_flight = (char *)malloc(sizeof(char) * strlen(flight_token));
+    sprintf(invert_fligh, "%s", flight_token);
+    
+    char * flight_from = NULL;
+    char * flight_to = NULL;
+    
+    flight_from = strtok_t(invert_flight, "-", &flight_to);
+    
+    sprintf(flight_token, "%s-%s", flight_to, flight_from);
+    
+    
+    // assign persistent memory for hash node
+    char * flight = NULL;
+    flight = (char*)malloc(sizeof(char) * strlen(flight_token) + 1);
+    char * seats = NULL;
+    seats = (char*)malloc(sizeof(char) * strlen(seats_token) + 1);
+    memset(flight, 0, sizeof(char) * strlen(flight_token) + 1);
+    memset(seats, 0, sizeof(char) * strlen(seats_token) + 1);
+    
+    // TODO: free memory in request on server thread
+    
+    // copy temp strings into memory
+    strcpy(flight, flight_token);
+    strcpy(seats, seats_token);
+    
+    any_t *flight_to_reserve = malloc(sizeof(any_t));
+    
+    // acquire lock to flight_map
+    pthread_mutex_lock(&flight_map_mutex);
+    
+    if(hashmap_get(flight_map, flight, flight_to_reserve) == MAP_OK)
+    {
+        char * seats_available = (char*) *flight_to_reserve;
+        int client_seats = atoi(seats);
+        int flight_seats = atoi(seats_available);
+        int update_seats = flight_seats + client_seats;
+        
+        if(update_seats >= 0)
+        {
+            char * new_update_seats = NULL;
+            new_update_seats = (char *)malloc(sizeof(char) * 5);
+            inttochar(update_seats, new_update_seats, 10);
+            strcpy((*flight_to_reserve), new_update_seats);
+            
+            pthread_mutex_unlock(&flight_map_mutex);
+            
+            free(seats);
+            seats = NULL;
+            free(flight);
+            flight = NULL;
+            
+            return new_update_seats;
+        }
+    }
+    
+    pthread_mutex_unlock(&flight_map_mutex);
+    
+    free(seats);
+    seats = NULL;
+    free(flight);
+    flight = NULL;
+    
+    return NULL;
 
+}
 char * return_flight(map_t flight_map, char * flight_token, char * seats_token)
 {
     // assign persistent memory for hash node
@@ -1538,7 +1612,7 @@ void * chat_list(void * arg)
         }
     }
     
-    client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) + 10);
+    client_list_online[j] = (char*)malloc(sizeof(char) * strlen("                 ") + 10);
     sprintf(client_list_online[j++], "%d chat users.\n", map->size - 1);    
     free(clients_list);
     client_info * online_list = (client_info *)malloc(sizeof(client_info));
