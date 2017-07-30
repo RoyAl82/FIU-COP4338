@@ -22,7 +22,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 
-#define MAX_THREADS 300
+#define MAX_THREADS 10
 
 /// prints error message and exits
 /// with error status
@@ -30,9 +30,7 @@ void error(char const * message) {
     perror(message);
     exit(0);
 }
-void * server_connection(void* arg);
-ssize_t writen(int fd, const void *vptr, size_t n);
-ssize_t readn(int fd, void *vptr, size_t n);
+
 
 
 struct hashmap_element {
@@ -59,6 +57,12 @@ char ** flights;
 int flights_size;
 char ** usernames;
 int username_size;
+int port;
+int port_init;
+char * ip_address;
+struct sockaddr_in ** server_address;
+struct hostent ** server;
+int ** clients_fd;
 
 typedef struct
 {
@@ -72,6 +76,10 @@ typedef struct
 }client_info;
 
 void * chat_msg(void * arg);
+void * socket_connection(void * arg);
+void * server_connection(void* arg);
+ssize_t writen(int fd, const void *vptr, size_t n);
+ssize_t readn(int fd, void *vptr, size_t n);
 
 int argcT = 3;
 char * argvT[] = {"TClient.o", "127.0.0.1","43001"};
@@ -81,17 +89,17 @@ int main(int argc, char * argv[]) {
         error("usage: travel_client ip_address port\n");
     
     // assign command line arguments
-    char * ip_address = argvT[1];
-    int port = atoi(argvT[2]);
-    int port_init = port;
+    ip_address = argvT[1];
+    port = atoi(argvT[2]);
+    port_init = port;
 //    // socket handler
 //    int * client_fd;
     
     // client socket address info
-    struct sockaddr_in server_address;
+ 
     
     // stores host information
-    struct hostent * server;
+    
     opt[0] = "QUERY";
     opt[1] = "RESERVE";
     opt[2] = "RETURN";
@@ -126,11 +134,14 @@ int main(int argc, char * argv[]) {
     
     pthread_cond_init(&chat_room_cond_thread, NULL);
     
+    server_address = (struct sockaddr_in **)malloc(sizeof(struct sockaddr_in*) * MAX_THREADS + 10);
+    server = (struct hostent **)malloc(sizeof(struct hostent*) * MAX_THREADS + 10);
+    clients_fd = (int**)malloc(sizeof(int*) * MAX_THREADS + 10);
     
-    
+//    ip_address = (char **)malloc(sizeof(char*) * MAX_THREADS + 10);
     pthread_mutex_init(&chat_room_mutex_thread, NULL);
-    pthread_t ** clients_threads = (pthread_t **)malloc(sizeof(pthread_t*));
-    int ** connection_fd = (int**)malloc(sizeof(int *) * MAX_THREADS);
+    pthread_t ** clients_threads = (pthread_t **)malloc(sizeof(pthread_t*) * MAX_THREADS + 10);
+//    int ** connection_fd = (int**)malloc(sizeof(int *) * MAX_THREADS);
     
 //    if ((*connection_fd[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
 //        error("error: opening client socket");
@@ -142,50 +153,59 @@ int main(int argc, char * argv[]) {
 //    if ((server = gethostbyname(ip_address)) == NULL)
 //        error("error: no host at ip addresss");
     
-    int i = 0;
+//    int i = 0;
     
-    while (i < MAX_THREADS)
-    {
+    
+    
         // socket handler
-        connection_fd[i] = (int *)malloc(sizeof(int));
+//        connection_fd[i] = (int *)malloc(sizeof(int));
 
-        if ((*connection_fd[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
-            error("error: opening client socket");
-        
-        int enable = 1;
-        if (setsockopt(*connection_fd[i], SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
-            error("error: cannot set socket options");
-        
-        if ((server = gethostbyname(ip_address)) == NULL)
-            error("error: no host at ip addresss");
-        
-        // initialize server_address object
-        memset(&server_address, 0, sizeof(server_address));
-        server_address.sin_family = AF_INET; // set socket type
-        server_address.sin_port = htons(port++); // set port number
-        inet_pton(AF_INET, ip_address, &server_address.sin_addr); // set socket ip address
-        
-        // connect socket to server address
-        if (connect(*connection_fd[i], (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
-            error("error: connecting to server");
-        
+//        if ((*connection_fd[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+//            error("error: opening client socket");
+//        
+//        int enable = 1;
+//        if (setsockopt(*connection_fd[i], SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+//            error("error: cannot set socket options");
+//        
+//        if ((server = gethostbyname(ip_address)) == NULL)
+//            error("error: no host at ip addresss");
+//        
+//        // initialize server_address object
+//        memset(&server_address, 0, sizeof(server_address));
+//        server_address.sin_family = AF_INET; // set socket type
+//        server_address.sin_port = htons(port++); // set port number
+//        inet_pton(AF_INET, ip_address, &server_address.sin_addr); // set socket ip address
+//        
+//        // connect socket to server address
+//        if (connect(*connection_fd[i], (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
+//            error("error: connecting to server");
+//        
+//        clients_threads[i] = (pthread_t *)malloc(sizeof(pthread_t));
+//        
+//        pthread_create(clients_threads[i], NULL, server_connection, connection_fd[i]);
+//        
+//        if(port > port_init + 4)
+//        {
+//            port = port_init;
+//        }
+//        i++;
+    int i;
+    for( i = 0; i < MAX_THREADS; i++)
+    {
+        int * i_addr = (int *)malloc(sizeof(int));
+        *i_addr = i;
         clients_threads[i] = (pthread_t *)malloc(sizeof(pthread_t));
         
-        pthread_create(clients_threads[i], NULL, server_connection, connection_fd[i]);
-        
-        if(port > port_init + 4)
-        {
-            port = port_init;
-        }
-        i++;
+        pthread_create(clients_threads[i], NULL, socket_connection, (void*)i_addr);
     }
- 
+
+    
     
     for (int j = 0; j < i; j++)
     {
         void * out;
         
-        pthread_join(*clients_threads[i], &out);
+        pthread_join(*clients_threads[j], &out);
         int * fd = (int *)out;
         
         close(*fd);
@@ -193,6 +213,51 @@ int main(int argc, char * argv[]) {
     
     return 0;
 }
+void * socket_connection(void * arg)
+{
+    int index = *(int*)arg;
+    server_address[index] = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+    server[index] = (struct hostent *)malloc(sizeof(struct hostent));
+//    ip_address[index] = (char *)malloc(sizeof(char) * MAX_THREADS + 10);
+    clients_fd[index] = (int*)malloc(sizeof(int));
+//    *clients_fd[index] = 0;
+//    int client_fd;
+    
+    if ((*clients_fd[index] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+        error("error: opening client socket");
+    
+    int enable = 1;
+    if (setsockopt(*clients_fd[index], SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+        error("error: cannot set socket options");
+    
+    if ((server[index] = gethostbyname(ip_address)) == NULL)
+        error("error: no host at ip addresss");
+    
+    // initialize server_address object
+//    memset(server_address[index], 0, sizeof(*server_address[index]));
+    server_address[index]->sin_family = AF_INET; // set socket type
+    server_address[index]->sin_port = htons(port); // set port number
+    inet_pton(AF_INET, ip_address, &server_address[index]->sin_addr); // set socket ip address
+    pthread_mutex_lock(&chat_room_mutex_thread);
+    // connect socket to server address
+    if (connect(*clients_fd[index], (struct sockaddr *) server_address[index], sizeof(server_address[index])) < 0)
+        error("error: connecting to server");
+    pthread_mutex_unlock(&chat_room_mutex_thread);
+    
+    pthread_t client_thread;
+//    clients_threads[index] = (pthread_t *)malloc(sizeof(pthread_t));
+    
+    pthread_create(&client_thread, NULL, server_connection, clients_fd[index]);
+    port++;
+    if(port > port_init + 4)
+    {
+        port = port_init;
+    }
+
+    pthread_join(client_thread, NULL);
+    pthread_exit(NULL);
+}
+
 void * server_connection(void* arg)
 {
     int * client_fd = (int*)arg;

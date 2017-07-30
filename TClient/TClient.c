@@ -40,11 +40,14 @@ pthread_mutex_t chat_room_mutex_thread;
 typedef struct
 {
     char * username;
+    char * chat_username;
     struct sockaddr_in * server_address;
     int client_connnection;
     char * buffer;
     pthread_t *client_chat_thread;
     int status;
+    int username_status;
+    int chat_username_status;
     
 }client_info;
 
@@ -147,13 +150,27 @@ void * server_connection(void* arg)
     my_connection->username = username;
     my_connection->client_chat_thread = (pthread_t *)malloc(sizeof(pthread_t));
     my_connection->status = 1;
-   
+    my_connection->username_status = 1;
+    
+    char * chat_username = (char*)malloc(sizeof(char) * 25);
+    sprintf(chat_username, "chat room: %s > ",username);
+    my_connection->chat_username = chat_username;
+    my_connection->chat_username_status = 0;
+    sprintf(buffer, "%s", my_connection->username);
     
     while(my_connection->status)
     {
-        if(strcmp(username, buffer) != 0)
+        if(my_connection->username_status && strcmp(username, buffer) == 0)
         {
-            fprintf(stdout, "%s", username);
+            fprintf(stdout, "%s", my_connection->username);
+             my_connection->username_status = 1;
+             my_connection->chat_username_status = 0;
+        }
+        else if(my_connection->chat_username_status && strcmp(my_connection->chat_username, buffer) == 0)
+        {
+            fprintf(stdout, "%s", my_connection->chat_username);
+            my_connection->username_status = 0;
+            my_connection->chat_username_status = 1;
         }
         
         if(strcmp(buffer, "LOGOFF") == 0)
@@ -161,6 +178,7 @@ void * server_connection(void* arg)
             my_connection->status = 0;
             break;
         }
+        
         
         
         memset(buffer, 0, BUFFER_SIZE);
@@ -174,7 +192,14 @@ void * server_connection(void* arg)
         // read input from terminal to be sent
         while(my_connection->status && strcmp("\n", (const char*)buffer) == 0)
         {
-            fprintf(stdout, "%s", username);
+            if(my_connection->username_status)
+            {
+                fprintf(stdout, "%s", my_connection->username);
+            }
+            else if(my_connection->chat_username_status)
+            {
+                fprintf(stdout, "%s", my_connection->chat_username);
+            }
             memset(buffer, 0, BUFFER_SIZE);
             
             fgets(buffer, BUFFER_SIZE, stdin);
@@ -205,10 +230,10 @@ void * server_connection(void* arg)
         
         strtok(buffer, "\n"); // remove newline from input
         
-        if(strcmp(buffer, username) != 0)
+        if(strcmp(buffer, my_connection->username) != 0 && strcmp(buffer, my_connection->chat_username) != 0)
         {
-            memset(username, 0, sizeof(username));
-            if(read(client_fd, username, sizeof(username)) < 0)
+            memset(buffer, 0, BUFFER_SIZE);
+            if(read(client_fd, buffer, BUFFER_SIZE) < 0)
             {
                 my_connection->status = 0;
                 error("error: reading from socket");
@@ -259,23 +284,54 @@ void * chat_msg(void * arg)
         fprintf(stdout, "\n%s",msg);
         
         strtok(msg, "\n"); // remove newline from input
-        
+//         fprintf(stdout, "\n%s",my_connection->chat_username);
         
 //        ungetc(10, stdin);
 //        fflush(stdin);
         
-//        if(strcmp(msg, my_connection->username) != 0)
-//        {
-//            memset(msg, 0, msg_len);
-//            if(read(my_connection->client_connnection, msg, msg_len) < 0)
-//            {
-//                my_connection->status = 0;
-//                error("error: reading from socket");
-//            }
-//            
-//            fprintf(stdout, "%s",msg);
-////            fprintf(stdout, "\n%s",my_connection->username);
-//        }
+        if(strcmp(msg, my_connection->chat_username) != 0)
+        {
+            memset(msg, 0, msg_len);
+            if(read(my_connection->client_connnection, msg, msg_len) < 0)
+            {
+                my_connection->status = 0;
+                error("error: reading from socket");
+            }
+            if(strcmp(msg, my_connection->username) == 0)
+            {
+                fprintf(stdout, "%s",my_connection->username);
+                my_connection->username_status = 1;
+                my_connection->chat_username_status = 0;
+                
+            }
+            else if(strcmp(msg, my_connection->chat_username) == 0)
+            {
+                fprintf(stdout, "%s",msg);
+                my_connection->username_status = 0;
+                my_connection->chat_username_status = 1;
+            }
+            else
+            {
+                fprintf(stdout, "\n%s",msg);
+            }
+            
+//            fprintf(stdout, "\n%s",my_connection->username);
+        }
+        else
+        {
+            if(strcmp(msg, my_connection->username) == 0)
+            {
+                fprintf(stdout, "%s",my_connection->username);
+                my_connection->username_status = 1;
+                my_connection->chat_username_status = 0;
+            }
+            else if(strcmp(msg, my_connection->chat_username) == 0)
+            {
+                fprintf(stdout, "%s",msg);
+                my_connection->username_status = 0;
+                my_connection->chat_username_status = 1;
+            }
+        }
         
 //        pthread_mutex_unlock(&chat_room_mutex_thread);
         

@@ -11,7 +11,6 @@
 		B0142DDC1F2D10E600DFF810 /* TClientDummy.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DDB1F2D10E600DFF810 /* TClientDummy.c */; };
 		B0142DE21F2D295700DFF810 /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B0142DE01F2D295700DFF810 /* hashmap.c */; };
 		B08AE2691F1D3FF3003B81DE /* TClient.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2681F1D3FF3003B81DE /* TClient.c */; };
-		B08AE2791F1D40E6003B81DE /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE2731F1D409E003B81DE /* main.c */; };
 		B08AE27D1F1D5D0A003B81DE /* hashmap.c in Sources */ = {isa = PBXBuildFile; fileRef = B08AE27B1F1D5D0A003B81DE /* hashmap.c */; };
 /* End PBXBuildFile section */
 
@@ -64,7 +63,6 @@
 		B08AE2661F1D3FF3003B81DE /* TClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08AE2681F1D3FF3003B81DE /* TClient.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TClient.c; sourceTree = "<group>"; };
 		B08AE2711F1D409E003B81DE /* TServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TServer; sourceTree = BUILT_PRODUCTS_DIR; };
-		B08AE2731F1D409E003B81DE /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../TServer/main.c; sourceTree = "<group>"; };
 		B08AE27A1F1D4F13003B81DE /* data.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = data.txt; sourceTree = "<group>"; };
 		B08AE27B1F1D5D0A003B81DE /* hashmap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hashmap.c; sourceTree = "<group>"; };
 		B08AE27C1F1D5D0A003B81DE /* hashmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hashmap.h; sourceTree = "<group>"; };
@@ -137,7 +135,6 @@
 		B08AE2571F18E132003B81DE /* HW2 */ = {
 			isa = PBXGroup;
 			children = (
-				B08AE2731F1D409E003B81DE /* main.c */,
 			);
 			path = HW2;
 			sourceTree = "<group>";
@@ -297,7 +294,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B08AE2791F1D40E6003B81DE /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

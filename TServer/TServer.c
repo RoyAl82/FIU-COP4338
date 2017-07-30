@@ -113,7 +113,8 @@ void * chat_list_offline(void * arg);
 void * chat_text(void* arg);
 void server_command_request(char * arg, char * filenameOut);
 void * client_error_message(void * arg);
-
+char * return_flight_r(map_t flight_map, char * flight_token, char * seats_token);
+char * reserve_flight_r(map_t flight_map, char* flight_token, char * seats_token);
 
 void *free_flight_data(char * key, void * data);
 
@@ -727,7 +728,7 @@ void * create_send_data(void * arg)
     }
     else
     {
-        sendData = "Wrong input, Try again.\n"
+        sendData = "Wrong input, Try again.\n";
     }
     
     
@@ -1010,7 +1011,7 @@ void * client_return(void * arg)
     
     printf("server: returning %s seats on flight %s\n", seats, flight);
     char * status = return_flight(client_data->client->client_socket->map, flight, seats);
-    
+    char * status_r = return_flight_r(client_data->client->client_socket->map, flight, seats);
     list_flights * reserve_flights = NULL;
     reserve_flights = (list_flights *)malloc(sizeof(list_flights));
     reserve_flights->list = (char **)malloc(sizeof(char*));
@@ -1020,7 +1021,7 @@ void * client_return(void * arg)
     status_add_flight = (char *)malloc(sizeof(char) * strlen(message) + 1);
     memset(status_add_flight, 0, sizeof(char) * strlen(message) + 1);
     
-    if(status)
+    if(status && status_r)
         sprintf(status_add_flight, "Your return flight %s with %s seats was SUSCCESSFUL.\n", flight, seats);
     else
         sprintf(status_add_flight, "Your return flight %s with %s seats was UNSUCCESSFUl.\n", flight, seats);
@@ -1048,7 +1049,7 @@ void * client_reserve(void * arg)
     
     printf("server: reserving %s seats on flight %s\n", seats, flight);
     char * status = reserve_flight(client_data->client->client_socket->map, flight, seats);
-    
+    char * status_r = reserve_flight_r(client_data->client->client_socket->map, flight, seats);
     list_flights * reserve_flights = NULL;
     reserve_flights = (list_flights *)malloc(sizeof(list_flights));
     reserve_flights->list = (char **)malloc(sizeof(char*));
@@ -1058,7 +1059,7 @@ void * client_reserve(void * arg)
     status_add_flight = (char *)malloc(sizeof(char) * strlen(message) + 1);
     memset(status_add_flight, 0, sizeof(char) * strlen(message) + 1);
     
-    if(status)
+    if(status && status_r)
         sprintf(status_add_flight, "Your reservation flight %s with %s seats was SUSCCESSFUL.\n", flight, seats);
     else
         sprintf(status_add_flight, "Your reservation flight %s with %s seats was UNSUCCESSFUl.\n", flight, seats);
@@ -1067,6 +1068,71 @@ void * client_reserve(void * arg)
     reserve_flights->size = 1;
     
     pthread_exit(reserve_flights);
+}
+char * reserve_flight_r(map_t flight_map, char* flight_token, char * seats_token)
+{
+    char * invert_flight = (char *)malloc(sizeof(char) * strlen(flight_token));
+    sprintf(invert_flight, "%s", flight_token);
+    
+    char * flight_from = NULL;
+    char * flight_to = NULL;
+    
+    flight_from = strtok_r(invert_flight, "-", &flight_to);
+    
+    sprintf(flight_token, "%s-%s", flight_to, flight_from);
+    // assign persistent memory for hash node
+    char * flight = NULL;
+    flight = (char*)malloc(sizeof(char) * strlen(flight_token) + 1);
+    char * seats = NULL;
+    seats = (char*)malloc(sizeof(char) * strlen(seats_token) + 1);
+    memset(flight, 0, sizeof(char) * strlen(flight_token) + 1);
+    memset(seats, 0, sizeof(char) * strlen(seats_token) + 1);
+    
+    // TODO: free memory in request on server thread
+    
+    // copy temp strings into memory
+    strcpy(flight, flight_token);
+    strcpy(seats, seats_token);
+    
+    any_t *flight_to_reserve = malloc(sizeof(any_t));
+    
+    // acquire lock to flight_map
+    pthread_mutex_lock(&flight_map_mutex);
+    
+    if(hashmap_get(flight_map, flight, flight_to_reserve) == MAP_OK)
+    {
+        char * seats_available = (char*) *flight_to_reserve;
+        int client_seats = atoi(seats);
+        int flight_seats = atoi(seats_available);
+        int update_seats = flight_seats - client_seats;
+        
+        if(update_seats >= 0)
+        {
+            char * new_update_seats = NULL;
+            new_update_seats = (char *)malloc(sizeof(char) * 5);
+            inttochar(update_seats, new_update_seats, 10);
+            strcpy((*flight_to_reserve), new_update_seats);
+            pthread_mutex_unlock(&flight_map_mutex);
+            
+            free(seats);
+            seats = NULL;
+            free(flight);
+            flight = NULL;
+            
+            return new_update_seats;
+        }
+    }
+    
+    pthread_mutex_unlock(&flight_map_mutex);
+    free(flight_token);
+    free(seats_token);
+    free(seats);
+    seats = NULL;
+    free(flight);
+    flight = NULL;
+    
+    return NULL;
+
 }
 char * reserve_flight(map_t flight_map, char * flight_token, char * seats_token)
 {
@@ -1114,7 +1180,6 @@ char * reserve_flight(map_t flight_map, char * flight_token, char * seats_token)
     }
     
     pthread_mutex_unlock(&flight_map_mutex);
-    
     free(seats);
     seats = NULL;
     free(flight);
@@ -1125,12 +1190,12 @@ char * reserve_flight(map_t flight_map, char * flight_token, char * seats_token)
 char * return_flight_r(map_t flight_map, char * flight_token, char * seats_token)
 {
     char * invert_flight = (char *)malloc(sizeof(char) * strlen(flight_token));
-    sprintf(invert_fligh, "%s", flight_token);
+    sprintf(invert_flight, "%s", flight_token);
     
     char * flight_from = NULL;
     char * flight_to = NULL;
     
-    flight_from = strtok_t(invert_flight, "-", &flight_to);
+    flight_from = strtok_r(invert_flight, "-", &flight_to);
     
     sprintf(flight_token, "%s-%s", flight_to, flight_from);
     
@@ -1180,7 +1245,8 @@ char * return_flight_r(map_t flight_map, char * flight_token, char * seats_token
     }
     
     pthread_mutex_unlock(&flight_map_mutex);
-    
+    free(flight_token);
+    free(seats_token);
     free(seats);
     seats = NULL;
     free(flight);
@@ -1391,28 +1457,36 @@ void * client_msg_chat(void * arg)
     client->chat_status = 1;
     size_t buff_len = sizeof(char) * 2000;
     struct timespec time;
-    time.tv_sec = 1;
-    time.tv_nsec = 0;
+    time.tv_sec = 2;
+    time.tv_nsec = 5000;
     
     char * chat_user = (char *) malloc(sizeof(char) * 250);
     memset(chat_user, 0, sizeof(char) * 250);
     sprintf(chat_user, "chat room: %s > ", client->username);
+    char * welcome = "\e[1;1H\e[2JENTERED CHAT\n";
     
-    write(client->client_connnection, "\e[1;1H\e[2JENTERED CHAT\n", strlen("\e[1;1H\e[2J\nENTERED CHAT\n"));
+    write(client->client_connnection, welcome, strlen(welcome));
     
     pthread_cond_timedwait(&break_cond, &break_mutex, &time);
     
     write(client->client_connnection, chat_user, strlen(chat_user));
+    
     client->chat_user = chat_user;
     
-    while (1)
+    
+    pthread_cond_timedwait(&break_cond, &break_mutex, &time);
+    
+    write(client->client_connnection, chat_user, strlen(chat_user));
+    
+    
+    while (client->chat_status)
     {
         char * buff = (char *) malloc(buff_len);
         memset(buff, 0, buff_len);
 
         read(client->client_connnection, buff, buff_len);
         
-        if(string_equal(buff, "EXIT"))
+        if(string_equal(buff, "EXIT CHAT"))
             break;
     
         client->buff = buff;
@@ -1423,12 +1497,14 @@ void * client_msg_chat(void * arg)
         if(request_out)
         {
             write(client->client_connnection, client->buff, strlen(client->buff));
-          
-            memset(buff, 0, buff_len);            
+            if(client->buff)
+                free(client->buff);
+            pthread_cond_timedwait(&break_cond, &break_mutex, &time);
+            
         }
-        pthread_cond_timedwait(&break_cond, &break_mutex, &time);
         
-        write(client->client_connnection, chat_user, strlen(chat_user));
+        
+        write(client->client_connnection, client->chat_user, strlen(chat_user));
     }
    
     client->chat_status = 0;
@@ -1448,22 +1524,18 @@ void * chat_request(void * arg)
     char * input_tokens = NULL;
     char * command = NULL;
     
-    
     if (!(command= strtok_r(client->buff, " ", &input_tokens)))
     {
-        list_flights * error_message = (list_flights *)malloc(sizeof(list_flights));
-        error_message->list = (char**)malloc(sizeof(char*));
-        char * message = NULL;
-        char * messageLen = "Error: cannot proccess server command\n";
+        char * messageLen = "WARNNING!: Cannot recognize command ------------------\nPlease, try again.\n";
         
-        message = (char *)malloc(sizeof(char) * strlen(messageLen) + 1);
-        memset(message, 0, sizeof(char) * strlen(messageLen) + 1);
+        char * buff = (char*)malloc(sizeof(char) *strlen(messageLen));
         
-        sprintf(message, "Error: cannot proccess server command\n");
-        error_message->list[0] = message;
-        error_message->size = 1;
+        sprintf(buff, "WARNNING!: Cannot recognize command %s\nPlease, try again.\n", command);
+        if(client->buff)
+            free(client->buff);
+        client->buff = buff;
+        pthread_exit(client);
         
-        return (void *) error_message;
     }
     
     if(string_equal(command, "TEXT"))
@@ -1490,23 +1562,17 @@ void * chat_request(void * arg)
         
         if(list->buff && list->chat_status > 0)
         {
-            char * list_client = (char*)malloc(sizeof(char) * list->chat_status * strlen(*(char**)list->buff));
+            char * list_client = (char*)malloc(sizeof(char) * list->chat_status * 15);
             char ** new_list = (char**)list->buff;
             for (int i = 0; i < list->chat_status; i++)
             {
                 sprintf(list_client, "%s%s", list_client, new_list[i]);
+                free(new_list[i]);
             }
-            
             if(client->buff)
                 free(client->buff);
             client->buff = list_client;
         }
-        if(!list->chat_status)
-        {
-            free(client->buff);
-            client->buff = "NONE\n";
-        }
-        
         free(list->buff);
         free(list);
         
@@ -1522,21 +1588,17 @@ void * chat_request(void * arg)
         
         if(list->chat_status > 0 && list->buff)
         {
-            char * list_client = (char*)malloc(sizeof(char) * list->chat_status * strlen(*(char**)list->buff));
+            char * list_client = (char*)malloc(sizeof(char) * list->chat_status * 15);
             char ** new_list = (char**)list->buff;
             for (int i = 0; i < list->chat_status; i++)
             {
                 sprintf(list_client, "%s%s", list_client, new_list[i]);
+                free(new_list[i]);
             }
         
             if(client->buff)
                 free(client->buff);
             client->buff = list_client;
-        }
-        if(!list->chat_status)
-        {
-            free(client->buff);
-            client->buff = "NONE\n";
         }
         
         free(list->buff);
@@ -1558,16 +1620,12 @@ void * chat_request(void * arg)
             for (int i = 0; i < list->chat_status; i++)
             {
                 sprintf(list_client, "%s%s", list_client, new_list[i]);
+                free(new_list[i]);
             }
         
             if(client->buff)
                 free(client->buff);
             client->buff = list_client;
-        }
-        if(!list->chat_status)
-        {
-            free(client->buff);
-            client->buff = "NONE\n";
         }
         
         free(list->buff);
@@ -1596,7 +1654,7 @@ void * chat_list(void * arg)
     void ** clients_list = hashmap_foreach(client_map, &get_clients_list);
     pthread_mutex_unlock(&client_map_mutex);
     
-    char ** client_list_online = (char**)malloc(sizeof(char*) * map->size);
+    char ** client_list_online = (char**)malloc(sizeof(char*) * map->size + 2);
     
     int j = 0;
     
@@ -1606,15 +1664,17 @@ void * chat_list(void * arg)
         
         if(client->chat_status && client->chat_user && !string_equal(myself->chat_user, client->chat_user))
         {
-            client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) + 10);
+            client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) * 2);
             
             sprintf(client_list_online[j++], "%s:%s\n",client->username, ((client->chat_status > 0)? "Online" : "Offline") );
         }
     }
     
-    client_list_online[j] = (char*)malloc(sizeof(char) * strlen("                 ") + 10);
-    sprintf(client_list_online[j++], "%d chat users.\n", map->size - 1);    
+    client_list_online[j] = (char*)malloc(sizeof(char) * (strlen("           ") * 2));
+    sprintf(client_list_online[j], "%d Online chat users.\n", j);
+    j++;
     free(clients_list);
+    
     client_info * online_list = (client_info *)malloc(sizeof(client_info));
     online_list->buff = (char*)client_list_online;
     online_list->chat_status = j;
@@ -1630,7 +1690,7 @@ void * chat_list_all(void * arg)
     void ** clients_list = hashmap_foreach(client_map, &get_clients_list);
     pthread_mutex_unlock(&client_map_mutex);
     
-    char ** client_list_online = (char**)malloc(sizeof(char*) * map->size);
+    char ** client_list_online = (char**)malloc(sizeof(char*) * map->size + 2);
     
     int j = 0;
     for(int i = 0; i < map->size; i++)
@@ -1639,14 +1699,18 @@ void * chat_list_all(void * arg)
         
         if(client->chat_user && !string_equal(myself->chat_user, client->chat_user))
         {
-            client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) + 10);
+            client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) * 2);
             
             sprintf(client_list_online[j++], "%s:%s\n",client->username,((client->chat_status > 0)? "Online" : "Offline") );
         }
     }
+    client_list_online[j] = (char*)malloc(sizeof(char) * (strlen("            ") * 2));
+    sprintf(client_list_online[j], "%d chat users.\n", j);
+    j++;
     free(clients_list);
     client_info * all_list = (client_info *)malloc(sizeof(client_info));
     all_list->buff = (char*)client_list_online;
+    
     all_list->chat_status = j;
     
     pthread_exit(all_list);
@@ -1661,7 +1725,7 @@ void * chat_list_offline(void * arg)
     void ** clients_list = hashmap_foreach(client_map, &get_clients_list);
     pthread_mutex_unlock(&client_map_mutex);
     
-    char ** client_list_online = (char**)malloc(sizeof(char*) * map->size);
+    char ** client_list_online = (char**)malloc(sizeof(char*) * map->size + 2);
     
     int j = 0;
     for(int i = 0; i < map->size; i++)
@@ -1670,12 +1734,14 @@ void * chat_list_offline(void * arg)
         
         if(!client->chat_status && client->chat_user && !string_equal(myself->chat_user, client->chat_user))
         {
-            client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) + 10);
+            client_list_online[j] = (char*)malloc(sizeof(char) * strlen(client->username) * 2);
             
             sprintf(client_list_online[j++], "%s:%s\n",client->username,((client->chat_status > 0)? "Online" : "Offline") );
-            
         }
     }
+    client_list_online[j] = (char*)malloc(sizeof(char) * (strlen("                 ") * 2));
+    sprintf(client_list_online[j], "%d Offline chat users.\n", j);
+    j++;
     free(clients_list);
     client_info * offline_list = (client_info *)malloc(sizeof(client_info));
     offline_list->buff = (char*)client_list_online;
@@ -1702,7 +1768,7 @@ void send_msg_chat(client_info * myself, void ** clients_list, size_t list_size,
 {
     client_info * clientfd = NULL;
     struct timespec time;
-    time.tv_sec = 1;
+    time.tv_sec = 2;
     time.tv_nsec = 0;
     
     char * send_prefix_msg = "CHAT room: %s ";
